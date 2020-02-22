@@ -2,11 +2,15 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:device_info/device_info.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:recycle_it/animation.dart';
 
 import 'credentials.dart';
 
 import 'package:geolocator/geolocator.dart';
+
+import 'package:flutter_html/flutter_html.dart';
+
 
 import 'package:mongo_dart/mongo_dart.dart' as mongo;
 
@@ -115,19 +119,23 @@ class HomePage extends StatelessWidget {
                   fontWeight: FontWeight.w300,
                 ),
                 boxHeight: height / 3,
-                loadDuration: Duration(milliseconds: 3500),
+                loadDuration: Duration(milliseconds: 3000),
               ),
             ),
             Padding(
-              padding: EdgeInsets.fromLTRB(width / 7, 0, width / 7, height / 7),
-              child: Text(
-                "Give us an image of your rubbish and we'll tell you whether it is recyclable.",
-                style: TextStyle(
-                  fontSize: 16.0,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
+              padding: EdgeInsets.fromLTRB(width/7, 0, width/7, height/7),
+              child: ShowUp(
+                child: Text(
+                  "Give us an image of your rubbish and we'll tell you whether it is recyclable.",
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
+                delay: 1250,
+                bottom: 0.5,
               ),
             ),
           ],
@@ -166,6 +174,7 @@ class HomePage extends StatelessWidget {
             IconButton(
               icon: Icon(Icons.map),
               color: Colors.white,
+              iconSize: 35,
               onPressed: () {
                 Navigator.push(
                   context,
@@ -176,6 +185,7 @@ class HomePage extends StatelessWidget {
             IconButton(
               icon: Icon(Icons.menu),
               color: Colors.white,
+              iconSize: 35,
               onPressed: () {
                 Navigator.push(
                   context,
@@ -228,12 +238,13 @@ class TakePictureScreenState extends State<TakePictureScreen> {
           if (snapshot.connectionState == ConnectionState.done) {
             return CameraPreview(_controller);
           } else {
-            return Center(child: CircularProgressIndicator());
+            return Center(child: CircularProgressIndicator(backgroundColor: Colors.green,valueColor: new AlwaysStoppedAnimation<Color>(Colors.green.shade300)));
+
           }
         },
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 35.0),
+        padding: const EdgeInsets.only(bottom: 30.0),
         child: FloatingActionButton(
           onPressed: () async {
             try {
@@ -404,6 +415,7 @@ class _RecyclePageState extends State<RecyclePage> {
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 28),
                 ),
                 delay: 750,
+                bottom: 5.0
               ),
               for (var i = 1; i < recyclableData.length; i++)
                 ShowUp(
@@ -411,13 +423,15 @@ class _RecyclePageState extends State<RecyclePage> {
                     recyclableData[i].toString().titleCase,
                     style: TextStyle(fontSize: 20),
                   ),
-                  delay: 1250,
+                  delay: 1250, 
+                  bottom: 5.0,
                 ),
               ShowUp(
                 child: Text(
                   "Items Scanned: ${returnAddInfo.toString()}",
                 ),
                 delay: 1750,
+                bottom: 5.0,
               ),
             ],
           ),
@@ -427,11 +441,12 @@ class _RecyclePageState extends State<RecyclePage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => TakePictureScreen(camera: firstCamera)),
+                builder: (context) => HomePage()
+              ),
             );
           },
-          tooltip: 'Camera',
-          child: Icon(Icons.camera_alt),
+          tooltip: 'Home',
+          child: Icon(Icons.home),
           backgroundColor: Colors.green.shade300,
         ),
       );
@@ -442,12 +457,13 @@ class _RecyclePageState extends State<RecyclePage> {
         backgroundColor: Colors.green.shade300,
       ),
         backgroundColor: Colors.white,
-        body: Center(
+        body: /* Center(
           child: Icon(
-            Icons.check,
+            Icons.rotate_right,
             color: Colors.green.shade300,
             size: 100,
-      )));
+      ))) */
+      Center(child: CircularProgressIndicator(backgroundColor: Colors.green,valueColor: new AlwaysStoppedAnimation<Color>(Colors.green.shade300))));
     }
   }
 }
@@ -476,48 +492,119 @@ class MapPage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (context) => TakePictureScreen(camera: firstCamera)),
+              builder: (context) => HomePage()
+            ),
           );
         },
-        tooltip: 'Camera',
-        child: Icon(Icons.camera_alt),
+        tooltip: 'Home',
+        child: Icon(
+          Icons.home
+        ),
         backgroundColor: Colors.green.shade300,
       ),
     );
   }
 }
 
+class StatsPage extends StatefulWidget {
+
+  const StatsPage();
+
+  @override
+  _StatsPageState createState() => _StatsPageState();
+}
+
 /* page to render the stats page */
-class StatsPage extends StatelessWidget {
+class _StatsPageState extends State<StatsPage> {
+  List data;
+  String htmlBody = "";
+
+  Future request() async {
+  
+    Position position = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.lowest);
+    print(position);
+    List<Placemark> placemark = await Geolocator().placemarkFromCoordinates(position.latitude,position.longitude,localeIdentifier:"en_UK");
+
+    print(placemark[0].postalCode);
+
+    String qstring = placemark[0].postalCode.replaceFirst(' ', '+').substring(0,placemark[0].postalCode.length-1);
+
+    String geoLocationURL = 'https://exeter.gov.uk/repositories/hidden-pages/address-finder/?qtype=bins&term=' + qstring;   
+    print(geoLocationURL);
+
+    final geoResponse = await http.get(geoLocationURL);
+    print(geoResponse);
+    
+    data = json.decode(geoResponse.body);
+    htmlBody = data[0]['Results'];
+
+    setState(() {
+        if (htmlBody == '') {
+          htmlBody = '';
+        } else {
+          htmlBody = htmlBody;
+        }
+      });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    request();
+  }
+
+  
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
+    if (htmlBody!=""){
+      return Scaffold(
+        appBar: AppBar(
+          title: Text("Recycle It"),
+          backgroundColor: Colors.green.shade300,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children:[
+              Html(
+                data:htmlBody,
+                padding: EdgeInsets.all(20.0),
+              )
+            ],
+          ),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => HomePage()
+              ),
+            );
+          },
+          tooltip: 'Home',
+          child: Icon(
+            Icons.home
+          ),
+          backgroundColor: Colors.green.shade300,
+        ),
+      );
+    }
+    else {
+      return Scaffold(
+        appBar: AppBar(
         title: Text("Recycle It"),
         backgroundColor: Colors.green.shade300,
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              "This is the stats page",
-            )
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => TakePictureScreen(camera: firstCamera)),
-          );
-        },
-        tooltip: 'Camera',
-        child: Icon(Icons.camera_alt),
-        backgroundColor: Colors.green.shade300,
-      ),
-    );
+        backgroundColor: Colors.white,
+        body: /* Center(
+          child: Icon(
+            Icons.rotate_right,
+            color: Colors.green.shade300,
+            size: 100,
+      ))) */
+      Center(child: CircularProgressIndicator(backgroundColor: Colors.green,valueColor: new AlwaysStoppedAnimation<Color>(Colors.green.shade300))));
+    }
   }
 }
