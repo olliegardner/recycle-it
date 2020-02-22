@@ -9,8 +9,6 @@ import 'credentials.dart';
 
 import 'package:geolocator/geolocator.dart';
 
-import 'package:flutter_html/flutter_html.dart';
-
 
 import 'package:mongo_dart/mongo_dart.dart' as mongo;
 
@@ -69,6 +67,8 @@ var negativeKeywords = ["reusable"];
 Position position;
 List<Placemark> placemark;
 
+var coll;
+mongo.Db db;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -79,6 +79,10 @@ Future<void> main() async {
   position = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.lowest);
   print(position);
   placemark = await Geolocator().placemarkFromCoordinates(position.latitude,position.longitude,localeIdentifier:"en_UK");
+
+  db = new mongo.Db(dburl);
+  await db.open();
+  coll = db.collection('data');
 
   runApp(
     MaterialApp(
@@ -359,13 +363,9 @@ class _RecyclePageState extends State<RecyclePage> {
             print('Running on ${iosInfo.identifierForVendor}');
           }
 
-          mongo.Db db = new mongo.Db(dburl);
-          await db.open();
-
-          var coll = db.collection('data');
           if (!temp.contains('NOT RECYCLABLE')) {
             await coll.insert(
-                {'uuid': id, 'kws': temp, 'created_at': new DateTime.now()});
+                {'uuid': id, 'kws': temp, 'created_at': new DateTime.now(), 'lat': position.latitude, "long": position.longitude});
           }
 
           addInfo = await coll.count({'uuid': id});
@@ -475,13 +475,30 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
-  Completer<GoogleMapController> _controller = Completer();
+  //Completer<GoogleMapController> _controller = Completer();
 
   final CameraPosition _cameraPosition = CameraPosition(
     target: LatLng(position.latitude, position.longitude),
     //target: LatLng(50.73322766816302, -3.5352093944980663),
     zoom: 14,
   );
+
+  final Map<String, Marker> _markers = {};
+  
+  Future<void> _onMapCreated(GoogleMapController controller) async {
+    var locations = await coll.find();
+    setState(() {
+      _markers.clear();
+
+      for (var loc in locations) {
+        final marker = Marker(
+          markerId: MarkerId(loc.uuid),
+          position: LatLng(loc.lat, loc.lng),
+        );
+        _markers[loc.uuid] = marker;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -494,9 +511,8 @@ class _MapPageState extends State<MapPage> {
       body: GoogleMap(
         mapType: MapType.normal,
         initialCameraPosition: _cameraPosition,
-        onMapCreated: (GoogleMapController controller) {
-          _controller.complete(controller);
-        },
+        onMapCreated: _onMapCreated,
+        markers: _markers.values.toSet(),
         myLocationEnabled: true,
         myLocationButtonEnabled: false,
       ),
