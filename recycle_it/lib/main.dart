@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' show join;
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
+import 'package:recase/recase.dart';
 
 //potentially have negative keywords
 //offer user an option 'did we get this correct'
@@ -44,7 +45,11 @@ var recyclables = [
   "carrier",
   "catalogue",
   "phone directory",
-  "drinkware"
+  "drinkware",
+
+
+  "interior design",
+  "room"
 ];
 
 var negativeKeywords = ["reusable"];
@@ -186,8 +191,7 @@ class RecyclePage extends StatefulWidget {
 
 class _RecyclePageState extends State<RecyclePage> {
   Map data;
-  List recycleData;
-  String recyclableData = '';
+  List recyclableData = [];
   int returnAddInfo = 0;
 
   Future request() async {
@@ -216,7 +220,7 @@ class _RecyclePageState extends State<RecyclePage> {
 
       print(response.body);
 
-      var temp = '';
+      List temp = [];
       var addInfo;
 
       if (data['responses'][0]['labelAnnotations'].length != null) {
@@ -226,9 +230,8 @@ class _RecyclePageState extends State<RecyclePage> {
           if (recyclables.contains(data['responses'][0]['labelAnnotations'][i]
                   ['description']
               .toLowerCase())) {
-            temp += data['responses'][0]['labelAnnotations'][i]['description']
-                    .toLowerCase() +
-                ', ';
+            temp.add(data['responses'][0]['labelAnnotations'][i]['description']
+                    .toLowerCase());
           }
         }
         for (int i = 0;
@@ -238,10 +241,10 @@ class _RecyclePageState extends State<RecyclePage> {
                   [i]['description']
               .toLowerCase())) {
             //hit a negative so clear string
-            temp = '';
+            temp = [];
           }
         }
-        if (temp != '') {
+        if (temp != []) {
           DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
           var id = '';
           if (Platform.isAndroid) {
@@ -274,9 +277,8 @@ class _RecyclePageState extends State<RecyclePage> {
       }
 
       setState(() {
-        //recycleData = data['responses'][0]['labelAnnotations'];
-        if (temp == '') {
-          recyclableData = 'No matches';
+        if (temp == []) {
+          recyclableData = ['No matches'];
         } else {
           recyclableData = temp;
           returnAddInfo = addInfo;
@@ -297,10 +299,31 @@ class _RecyclePageState extends State<RecyclePage> {
       appBar: AppBar(
         title: Text("Recycle It"),
       ),
-      body: Text("We think this is recyclable due to the following keywords: " +
-          recyclableData +
-          ' ' +
-          returnAddInfo.toString()),
+
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              recyclableData[0].toString().titleCase,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 28
+              ),
+            ),
+            for (var i = 1; i < recyclableData.length; i++)
+              Text(
+                recyclableData[i].toString().titleCase,
+                style: TextStyle(
+                  fontSize: 20
+                ),
+              ), 
+            Text(
+              "Items Scanned: ${returnAddInfo.toString()}",
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
