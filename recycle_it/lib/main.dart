@@ -1,14 +1,17 @@
 import 'dart:async';
 import 'dart:io';
-
 import 'dart:convert';
+
+import 'credentials.dart';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' show join;
 import 'package:path_provider/path_provider.dart';
 
-var firstCamera = null;
+import 'package:http/http.dart' as http;
+
+var firstCamera;
 
 Future<void> main() async {
   // Ensure that plugin services are initialized so that `availableCameras()`
@@ -183,13 +186,37 @@ class RecyclePage extends StatelessWidget {
 
   const RecyclePage({Key key, this.base64img}) : super(key: key);
 
+  request() async {
+    var url = 'https://vision.googleapis.com/v1/images:annotate?key=' + key;
+
+    var response = await http.post(url,
+      body: {
+        "requests":[
+          {
+            "image":{
+              "content":base64img,
+            },
+            "features":[
+              {
+                "type":"LABEL_DETECTION",
+                "maxResults":5
+              }
+            ]
+          }
+        ]
+      });
+
+      return response.body;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text("Recycle It"),
       ),
-      body: Text((base64img.length).toString()),
+      //body: Text((base64img.length).toString()),
+      body: request(),
     );
   }
 }
