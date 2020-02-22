@@ -15,6 +15,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:recase/recase.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 //potentially have negative keywords
 //offer user an option 'did we get this correct'
@@ -449,7 +450,19 @@ class _RecyclePageState extends State<RecyclePage> {
 }
 
 /* page to render the heat map */
-class MapPage extends StatelessWidget {
+class MapPage extends StatefulWidget {
+  @override
+  State<MapPage> createState() => _MapPageState();
+}
+
+class _MapPageState extends State<MapPage> {
+  Completer<GoogleMapController> _controller = Completer();
+
+  final CameraPosition _cameraPosition = CameraPosition(
+    target: LatLng(37.42796133580664, -122.085749655962),
+    zoom: 14.4746,
+  );
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -458,15 +471,12 @@ class MapPage extends StatelessWidget {
         backgroundColor: Colors.green.shade300,
         automaticallyImplyLeading: false,        
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              "This is the map page",
-            )
-          ], 
-        ),
+      body: GoogleMap(
+        mapType: MapType.normal,
+        initialCameraPosition: _cameraPosition,
+        onMapCreated: (GoogleMapController controller) {
+          _controller.complete(controller);
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
