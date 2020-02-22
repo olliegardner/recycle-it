@@ -60,7 +60,6 @@ class HomePage extends StatelessWidget {
   }
 }
 
-// A screen that allows users to take a picture using a given camera.
 class TakePictureScreen extends StatefulWidget {
   final CameraDescription camera;
 
@@ -80,22 +79,12 @@ class TakePictureScreenState extends State<TakePictureScreen> {
   @override
   void initState() {
     super.initState();
-    // To display the current output from the Camera,
-    // create a CameraController.
-    _controller = CameraController(
-        // Get a specific camera from the list of available cameras.
-        widget.camera,
-        // Define the resolution to use.
-        //ResolutionPreset.medium,
-        ResolutionPreset.high);
-
-    // Next, initialize the controller. This returns a Future.
+    _controller = CameraController(widget.camera, ResolutionPreset.ultraHigh);
     _initializeControllerFuture = _controller.initialize();
   }
 
   @override
   void dispose() {
-    // Dispose of the controller when the widget is disposed.
     _controller.dispose();
     super.dispose();
   }
@@ -114,7 +103,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
         },
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 25.0),
+        padding: const EdgeInsets.only(bottom: 40.0),
         child: FloatingActionButton(
           onPressed: () async {
             try {
