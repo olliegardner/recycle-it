@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
+import 'package:device_info/device_info.dart';
 
 import 'credentials.dart';
+
+import 'package:mongo_dart/mongo_dart.dart' as mongo;
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +13,41 @@ import 'package:path/path.dart' show join;
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 
+//potentially have negative keywords
+//offer user an option 'did we get this correct'
+//if not add all the labels to  a 'risk' filter
+
 var firstCamera;
+
+var recyclables = [
+  "plastic bottle",
+  "plastic",
+  "paper",
+  "glass",
+  "cardboard",
+  "packaging",
+  "cup",
+  "bottle",
+  "bottled",
+  "can",
+  "aerosol",
+  "deoderant",
+  "aluminium",
+  "foil",
+  "puree",
+  "polythene",
+  "film",
+  "wrap",
+  "newspaper",
+  "magazine",
+  "envelope",
+  "carrier",
+  "catalogue",
+  "phone directory",
+  "drinkware"
+];
+
+var negativeKeywords = ["reusable"];
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,6 +68,7 @@ Future<void> main() async {
 class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    
     return Scaffold(
       appBar: AppBar(
         title: Text("Recycle It"),
@@ -150,6 +188,8 @@ class RecyclePage extends StatefulWidget {
 class _RecyclePageState extends State<RecyclePage> {
   Map data;
   List recycleData;
+  String recyclableData = '';
+  int returnAddInfo =0;
 
   Future request() async {
     String url = 'https://vision.googleapis.com/v1/images:annotate?key=' + key;
@@ -157,9 +197,7 @@ class _RecyclePageState extends State<RecyclePage> {
     final body = jsonEncode({
       "requests": [
         {
-          "image": {
-            "content": "${widget.base64img}"
-          },
+          "image": {"content": "${widget.base64img}"},
           "features": [
             {"type": "LABEL_DETECTION", "maxResults": 25}
           ]
@@ -167,22 +205,74 @@ class _RecyclePageState extends State<RecyclePage> {
       ]
     });
 
-    final response = await http.post(
-      url,
-      headers: {
-        "accept-encoding" : "appplication/json",
-        "Content-Type": "'application/json'"
-      },
-      body: body
-    );
+    final response = await http.post(url,
+        headers: {
+          "accept-encoding": "appplication/json",
+          "Content-Type": "'application/json'"
+        },
+        body: body);
 
     if (response.statusCode == 200) {
       data = json.decode(response.body);
 
       print(response.body);
-      
+
+      var temp = '';
+      var addInfo;
+
+      if (data['responses'][0]['labelAnnotations'].length != null) {
+        for (int i = 0;
+            i < data['responses'][0]['labelAnnotations'].length;
+            i++) {
+          if (recyclables.contains(data['responses'][0]['labelAnnotations'][i]
+                  ['description']
+              .toLowerCase())) {
+            temp += data['responses'][0]['labelAnnotations'][i]['description']
+                    .toLowerCase() +
+                ', ';
+          }
+        }
+        for (int i = 0;
+            i < data['responses'][0]['labelAnnotations'].length;
+            i++) {
+          if (negativeKeywords.contains(data['responses'][0]['labelAnnotations']
+                  [i]['description']
+              .toLowerCase())) {
+            //hit a negative so clear string
+            temp = '';
+          }
+        }
+        if (temp != '') {
+          DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+          IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
+          print('Running on ${iosInfo.identifierForVendor}');
+
+          mongo.Db db = new mongo.Db(dburl);
+          await db.open();
+
+          var coll = db.collection('data');
+          await coll.insert({
+            'uuid': iosInfo.identifierForVendor,
+            'kws': temp,
+            'created_at': new DateTime.now()
+          });
+
+          addInfo = await coll.count({
+            'uuid': iosInfo.identifierForVendor,
+          });
+        }else{
+          print('dont insert unrecyclable doc');
+        }
+      }
+
       setState(() {
-        recycleData = data['responses'][0]['labelAnnotations'];
+        //recycleData = data['responses'][0]['labelAnnotations'];
+        if (temp == '') {
+          recyclableData = 'No matches';
+        } else {
+          recyclableData = temp;
+          returnAddInfo = addInfo;
+        }
       });
     }
   }
@@ -194,12 +284,13 @@ class _RecyclePageState extends State<RecyclePage> {
   }
 
   @override
-  Widget build(BuildContext context) {    
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text("Recycle It"),
       ),
-      body: Text(recycleData.toString()),
+      body: Text("We think this is recyclable due to the following keywords: " +
+          recyclableData +' '+ returnAddInfo.toString()),
     );
   }
 }

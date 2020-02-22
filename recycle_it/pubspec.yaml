@@ -23,6 +23,8 @@ dependencies:
   path_provider:
   path:
   http:
+  device_info:
+  mongo_dart: ^0.4.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
