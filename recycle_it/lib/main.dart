@@ -384,6 +384,7 @@ class _RecyclePageState extends State<RecyclePage> {
         appBar: AppBar(
           title: Text("Recycle It"),
           backgroundColor: Colors.green.shade300,
+          automaticallyImplyLeading: false,        
         ),
         body: Center(
           child: Column(
@@ -455,6 +456,7 @@ class MapPage extends StatelessWidget {
       appBar: AppBar(
         title: Text("Recycle It"),
         backgroundColor: Colors.green.shade300,
+        automaticallyImplyLeading: false,        
       ),
       body: Center(
         child: Column(
@@ -493,6 +495,7 @@ class StatsPage extends StatelessWidget {
       appBar: AppBar(
         title: Text("Recycle It"),
         backgroundColor: Colors.green.shade300,
+        automaticallyImplyLeading: false,        
       ),
       body: Center(
         child: Column(
