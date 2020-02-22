@@ -21,6 +21,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:recase/recase.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 //potentially have negative keywords
 //offer user an option 'did we get this correct'
@@ -65,12 +66,20 @@ var recyclables = [
 ];
 
 var negativeKeywords = ["reusable"];
+Position position;
+List<Placemark> placemark;
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final cameras = await availableCameras();
   firstCamera = cameras.first;
+
+  position = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.lowest);
+  print(position);
+  placemark = await Geolocator().placemarkFromCoordinates(position.latitude,position.longitude,localeIdentifier:"en_UK");
+
 
   /*
    // GEOLOCATION
@@ -148,7 +157,7 @@ class HomePage extends StatelessWidget {
           color: Colors.green.shade300,
         ),
         label: Text(
-          "Choose Image",
+          "Take Picture",
           style: TextStyle(
             fontSize: 14.0,
             color: Colors.green.shade300,
@@ -157,7 +166,7 @@ class HomePage extends StatelessWidget {
         ),
         backgroundColor: Colors.white,
         onPressed: () {
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(
                 builder: (context) => TakePictureScreen(camera: firstCamera)),
@@ -176,7 +185,7 @@ class HomePage extends StatelessWidget {
               color: Colors.white,
               iconSize: 35,
               onPressed: () {
-                Navigator.push(
+                Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(builder: (context) => MapPage()),
                 );
@@ -187,7 +196,7 @@ class HomePage extends StatelessWidget {
               color: Colors.white,
               iconSize: 35,
               onPressed: () {
-                Navigator.push(
+                Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(builder: (context) => StatsPage()),
                 );
@@ -260,7 +269,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
               final bytes = File(path).readAsBytesSync();
               String img64 = base64Encode(bytes);
 
-              Navigator.push(
+              Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
                   builder: (context) => RecyclePage(base64img: img64),
@@ -404,6 +413,7 @@ class _RecyclePageState extends State<RecyclePage> {
         appBar: AppBar(
           title: Text("Recycle It"),
           backgroundColor: Colors.green.shade300,
+          automaticallyImplyLeading: false,        
         ),
         body: Center(
           child: Column(
@@ -438,7 +448,7 @@ class _RecyclePageState extends State<RecyclePage> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            Navigator.push(
+            Navigator.pushReplacement(
               context,
               MaterialPageRoute(
                 builder: (context) => HomePage()
@@ -469,27 +479,37 @@ class _RecyclePageState extends State<RecyclePage> {
 }
 
 /* page to render the heat map */
-class MapPage extends StatelessWidget {
+class MapPage extends StatefulWidget {
+  @override
+  State<MapPage> createState() => _MapPageState();
+}
+
+class _MapPageState extends State<MapPage> {
+  Completer<GoogleMapController> _controller = Completer();
+
+  final CameraPosition _cameraPosition = CameraPosition(
+    target: LatLng(position.latitude, position.longitude),
+    zoom: 14.4746,
+  );
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text("Recycle It"),
         backgroundColor: Colors.green.shade300,
+        automaticallyImplyLeading: false,        
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              "This is the map page",
-            )
-          ],
-        ),
+      body: GoogleMap(
+        mapType: MapType.normal,
+        initialCameraPosition: _cameraPosition,
+        onMapCreated: (GoogleMapController controller) {
+          _controller.complete(controller);
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => HomePage()
@@ -521,10 +541,7 @@ class _StatsPageState extends State<StatsPage> {
 
   Future request() async {
   
-    Position position = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.lowest);
-    print(position);
-    List<Placemark> placemark = await Geolocator().placemarkFromCoordinates(position.latitude,position.longitude,localeIdentifier:"en_UK");
-
+    
     print(placemark[0].postalCode);
 
     String qstring = placemark[0].postalCode.replaceFirst(' ', '+').substring(0,placemark[0].postalCode.length-1);
