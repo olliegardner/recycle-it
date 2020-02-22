@@ -5,6 +5,9 @@ import 'package:device_info/device_info.dart';
 
 import 'credentials.dart';
 
+import 'package:geolocator/geolocator.dart';
+
+
 import 'package:mongo_dart/mongo_dart.dart' as mongo;
 
 import 'package:camera/camera.dart';
@@ -195,6 +198,25 @@ class _RecyclePageState extends State<RecyclePage> {
   int returnAddInfo = 0;
 
   Future request() async {
+    
+    
+    
+    // GEOLOCATION
+    Position position = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    print(position);
+    List<Placemark> placemark = await Geolocator().placemarkFromCoordinates(position.latitude,position.longitude,localeIdentifier:"en_UK");
+
+    print(placemark[0].postalCode);
+
+    String qstring = placemark[0].postalCode.replaceFirst(' ', '+').substring(0,-1);
+
+    String geoLocationURL = 'https://exeter.gov.uk/repositories/hidden-pages/address-finder/?qtype=bins&term=' + qstring;   
+
+    final GeoResponse = await http.get(geoLocationURL);
+    
+    // GEOLOCATION
+
+
     String url = 'https://vision.googleapis.com/v1/images:annotate?key=' + key;
 
     final body = jsonEncode({
