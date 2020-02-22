@@ -14,7 +14,7 @@ import 'package:path/path.dart' show join;
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:recase/recase.dart';
-import 'package:progress_dialog/progress_dialog.dart';
+import 'package:animated_text_kit/animated_text_kit.dart';
 
 //potentially have negative keywords
 //offer user an option 'did we get this correct'
@@ -75,16 +75,29 @@ Future<void> main() async {
 class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Recycle It"),
-      ),
+      backgroundColor: Colors.green.shade300,
+
       body: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
-            Text(
-              'Home page',
+            SizedBox(
+              width: width,
+              child: TextLiquidFill(
+                text: "Recycle It",
+                waveColor: Colors.white,
+                boxBackgroundColor: Colors.green.shade300,
+                textStyle: TextStyle(
+                  fontSize: 40.0,
+                  fontWeight: FontWeight.bold,
+                ),
+                boxHeight: height / 3,
+                loadDuration: Duration(milliseconds: 3500),
+              ),
             ),
           ],
         ),
