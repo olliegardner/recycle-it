@@ -14,7 +14,7 @@ import 'package:path/path.dart' show join;
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:recase/recase.dart';
-import 'package:flutter_sequence_animation/flutter_sequence_animation.dart';
+import 'package:progress_dialog/progress_dialog.dart';
 
 //potentially have negative keywords
 //offer user an option 'did we get this correct'
@@ -278,6 +278,10 @@ class _RecyclePageState extends State<RecyclePage> {
         }
       }
 
+      while (recyclableData == []) {
+        return Center(child: CircularProgressIndicator());
+      }
+
       setState(() {
         if (temp == []) {
           recyclableData = ['No matches'];
@@ -297,55 +301,64 @@ class _RecyclePageState extends State<RecyclePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Recycle It"),
-      ),
-
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ShowUp(
-              child: Text(
-                recyclableData[0].toString().titleCase,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 28
-                ),
-              ),
-              delay: 500,
-            ),
-            for (var i = 1; i < recyclableData.length; i++)
+    if (recyclableData.length > 0) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text("Recycle It"),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
               ShowUp(
                 child: Text(
-                  recyclableData[i].toString().titleCase,
+                  recyclableData[0].toString().titleCase,
                   style: TextStyle(
-                    fontSize: 20
+                    fontWeight: FontWeight.bold,
+                    fontSize: 28
                   ),
                 ),
-                delay: 1000, 
+                delay: 750,
               ),
-            ShowUp(
-              child: Text(
-                "Items Scanned: ${returnAddInfo.toString()}",
+              for (var i = 1; i < recyclableData.length; i++)
+                ShowUp(
+                  child: Text(
+                    recyclableData[i].toString().titleCase,
+                    style: TextStyle(
+                      fontSize: 20
+                    ),
+                  ),
+                  delay: 1250, 
+                ),
+              ShowUp(
+                child: Text(
+                  "Items Scanned: ${returnAddInfo.toString()}",
+                ),
+                delay: 1750,
               ),
-              delay: 1500,
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => TakePictureScreen(camera: firstCamera)),
-          );
-        },
-        tooltip: 'Camera',
-        child: Icon(Icons.camera_alt),
-      ),
-    );
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => TakePictureScreen(camera: firstCamera)),
+            );
+          },
+          tooltip: 'Camera',
+          child: Icon(Icons.camera_alt),
+        ),
+      );
+    } else {
+      return Center(
+        child: Icon(
+          Icons.check,
+          color: Colors.green,
+          size: 100,
+        )
+      );
+    }
   }
 }
