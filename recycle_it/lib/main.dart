@@ -122,7 +122,7 @@ class HomePage extends StatelessWidget {
           color: Colors.green.shade300,
         ),
         label: Text(
-          "Choose Image",
+          "Take Picture",
           style: TextStyle(
             fontSize: 14.0,
             color: Colors.green.shade300,
@@ -131,7 +131,7 @@ class HomePage extends StatelessWidget {
         ),
         backgroundColor: Colors.white,
         onPressed: () {
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => TakePictureScreen(camera: firstCamera)
@@ -151,7 +151,7 @@ class HomePage extends StatelessWidget {
               color: Colors.white,
               iconSize: 35,
               onPressed: () {
-                Navigator.push(
+                Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
                     builder: (context) => MapPage()
@@ -164,7 +164,7 @@ class HomePage extends StatelessWidget {
               color: Colors.white,
               iconSize: 35,
               onPressed: () {
-                Navigator.push(
+                Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
                     builder: (context) => StatsPage()
@@ -238,7 +238,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
               final bytes = File(path).readAsBytesSync();
               String img64 = base64Encode(bytes);
 
-              Navigator.push(
+              Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
                   builder: (context) => RecyclePage(base64img: img64),
@@ -424,7 +424,7 @@ class _RecyclePageState extends State<RecyclePage> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            Navigator.push(
+            Navigator.pushReplacement(
               context,
               MaterialPageRoute(
                 builder: (context) => HomePage()
@@ -470,7 +470,7 @@ class MapPage extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => HomePage()
@@ -509,7 +509,7 @@ class StatsPage extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => HomePage()
