@@ -68,7 +68,6 @@ Future<void> main() async {
 class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    
     return Scaffold(
       appBar: AppBar(
         title: Text("Recycle It"),
@@ -189,7 +188,7 @@ class _RecyclePageState extends State<RecyclePage> {
   Map data;
   List recycleData;
   String recyclableData = '';
-  int returnAddInfo =0;
+  int returnAddInfo = 0;
 
   Future request() async {
     String url = 'https://vision.googleapis.com/v1/images:annotate?key=' + key;
@@ -244,23 +243,32 @@ class _RecyclePageState extends State<RecyclePage> {
         }
         if (temp != '') {
           DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
-          IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
-          print('Running on ${iosInfo.identifierForVendor}');
+          var id = '';
+          if (Platform.isAndroid) {
+            AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+            id =androidInfo.androidId;
+            print('Running on ${androidInfo.androidId}');
+          } else if (Platform.isIOS) {
+            IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
+            id = iosInfo.identifierForVendor;
+
+            print('Running on ${iosInfo.identifierForVendor}');
+          }
 
           mongo.Db db = new mongo.Db(dburl);
           await db.open();
 
           var coll = db.collection('data');
           await coll.insert({
-            'uuid': iosInfo.identifierForVendor,
+            'uuid': id,
             'kws': temp,
             'created_at': new DateTime.now()
           });
 
           addInfo = await coll.count({
-            'uuid': iosInfo.identifierForVendor,
+            'uuid': id
           });
-        }else{
+        } else {
           print('dont insert unrecyclable doc');
         }
       }
@@ -290,7 +298,9 @@ class _RecyclePageState extends State<RecyclePage> {
         title: Text("Recycle It"),
       ),
       body: Text("We think this is recyclable due to the following keywords: " +
-          recyclableData +' '+ returnAddInfo.toString()),
+          recyclableData +
+          ' ' +
+          returnAddInfo.toString()),
     );
   }
 }
