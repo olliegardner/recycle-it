@@ -16,6 +16,7 @@ import 'package:path/path.dart' show join;
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:recase/recase.dart';
+import 'package:animated_text_kit/animated_text_kit.dart';
 
 //potentially have negative keywords
 //offer user an option 'did we get this correct'
@@ -28,6 +29,7 @@ var recyclables = [
   "plastic",
   "paper",
   "glass",
+  "glass bottle",
   "cardboard",
   "packaging",
   "cup",
@@ -54,8 +56,6 @@ var recyclables = [
   "can",
   "aluminum",
   "aluminum can",
-  
-  
   "interior design",
   "room"
 ];
@@ -87,9 +87,6 @@ Future<void> main() async {
 
   runApp(
     MaterialApp(
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-      ),
       home: HomePage(),
     ),
   );
@@ -98,21 +95,59 @@ Future<void> main() async {
 class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Recycle It"),
-      ),
+      backgroundColor: Colors.green.shade300,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(
-              'Home page',
+            SizedBox(
+              width: width,
+              child: TextLiquidFill(
+                text: "Recycle It",
+                waveColor: Colors.white,
+                boxBackgroundColor: Colors.green.shade300,
+                textStyle: TextStyle(
+                  fontSize: 55.0,
+                  fontWeight: FontWeight.w300,
+                ),
+                boxHeight: height / 3,
+                loadDuration: Duration(milliseconds: 3500),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(width / 7, 0, width / 7, height / 7),
+              child: Text(
+                "Give us an image of your rubbish and we'll tell you whether it is recyclable.",
+                style: TextStyle(
+                  fontSize: 16.0,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
+        elevation: 6.0,
+        icon: Icon(
+          Icons.camera_alt,
+          color: Colors.green.shade300,
+        ),
+        label: Text(
+          "Choose Image",
+          style: TextStyle(
+            fontSize: 14.0,
+            color: Colors.green.shade300,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        backgroundColor: Colors.white,
         onPressed: () {
           Navigator.push(
             context,
@@ -120,8 +155,36 @@ class HomePage extends StatelessWidget {
                 builder: (context) => TakePictureScreen(camera: firstCamera)),
           );
         },
-        tooltip: 'Camera',
-        child: Icon(Icons.camera_alt),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: BottomAppBar(
+        color: Colors.green.shade300,
+        child: new Row(
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            IconButton(
+              icon: Icon(Icons.map),
+              color: Colors.white,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => MapPage()),
+                );
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.menu),
+              color: Colors.white,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => StatsPage()),
+                );
+              },
+            )
+          ],
+        ),
       ),
     );
   }
@@ -198,6 +261,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
           },
           tooltip: 'Camera',
           child: Icon(Icons.camera),
+          backgroundColor: Colors.green.shade300,
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -255,7 +319,10 @@ class _RecyclePageState extends State<RecyclePage> {
           if (recyclables.contains(data['responses'][0]['labelAnnotations'][i]
                   ['description']
               .toLowerCase())) {
-                temp.removeLast();
+            if (temp.contains('NOT RECYCLABLE')) {
+              temp.remove('NOT RECYCLABLE');
+            }
+
             temp.add(data['responses'][0]['labelAnnotations'][i]['description']
                 .toLowerCase());
           }
@@ -288,8 +355,10 @@ class _RecyclePageState extends State<RecyclePage> {
           await db.open();
 
           var coll = db.collection('data');
-          await coll.insert(
-              {'uuid': id, 'kws': temp, 'created_at': new DateTime.now()});
+          if (!temp.contains('NOT RECYCLABLE')) {
+            await coll.insert(
+                {'uuid': id, 'kws': temp, 'created_at': new DateTime.now()});
+          }
 
           addInfo = await coll.count({'uuid': id});
         } else {
@@ -323,6 +392,7 @@ class _RecyclePageState extends State<RecyclePage> {
       return Scaffold(
         appBar: AppBar(
           title: Text("Recycle It"),
+          backgroundColor: Colors.green.shade300,
         ),
         body: Center(
           child: Column(
@@ -362,22 +432,92 @@ class _RecyclePageState extends State<RecyclePage> {
           },
           tooltip: 'Camera',
           child: Icon(Icons.camera_alt),
+          backgroundColor: Colors.green.shade300,
         ),
       );
-    } else if (recyclableData == null) {
-      return Center(
+    } else {
+      return Scaffold(
+        appBar: AppBar(
+        title: Text("Recycle It"),
+        backgroundColor: Colors.green.shade300,
+      ),
+        backgroundColor: Colors.white,
+        body: Center(
           child: Icon(
-        Icons.backspace,
-        color: Colors.red,
-        size: 100,
-      ));
-    }  else {
-      return Center(
-          child: Icon(
-        Icons.check,
-        color: Colors.green,
-        size: 100,
-      ));
+            Icons.check,
+            color: Colors.green.shade300,
+            size: 100,
+      )));
     }
+  }
+}
+
+/* page to render the heat map */
+class MapPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Recycle It"),
+        backgroundColor: Colors.green.shade300,
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              "This is the map page",
+            )
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => TakePictureScreen(camera: firstCamera)),
+          );
+        },
+        tooltip: 'Camera',
+        child: Icon(Icons.camera_alt),
+        backgroundColor: Colors.green.shade300,
+      ),
+    );
+  }
+}
+
+/* page to render the stats page */
+class StatsPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Recycle It"),
+        backgroundColor: Colors.green.shade300,
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              "This is the stats page",
+            )
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => TakePictureScreen(camera: firstCamera)),
+          );
+        },
+        tooltip: 'Camera',
+        child: Icon(Icons.camera_alt),
+        backgroundColor: Colors.green.shade300,
+      ),
+    );
   }
 }
