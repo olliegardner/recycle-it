@@ -113,33 +113,36 @@ class TakePictureScreenState extends State<TakePictureScreen> {
           }
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          try {
-            await _initializeControllerFuture;
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 25.0),
+        child: FloatingActionButton(
+          onPressed: () async {
+            try {
+              await _initializeControllerFuture;
 
-            final path = join(
-              (await getTemporaryDirectory()).path,
-              '${DateTime.now()}.png',
-            );
+              final path = join(
+                (await getTemporaryDirectory()).path,
+                '${DateTime.now()}.png',
+              );
 
-            await _controller.takePicture(path);
+              await _controller.takePicture(path);
 
-            final bytes = File(path).readAsBytesSync();
-            String img64 = base64Encode(bytes);
+              final bytes = File(path).readAsBytesSync();
+              String img64 = base64Encode(bytes);
 
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => RecyclePage(base64img: img64),
-              ),
-            );
-          } catch (e) {
-            print(e);
-          }
-        },
-        tooltip: 'Camera',
-        child: Icon(Icons.camera),
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RecyclePage(base64img: img64),
+                ),
+              );
+            } catch (e) {
+              print(e);
+            }
+          },
+          tooltip: 'Camera',
+          child: Icon(Icons.camera),
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
