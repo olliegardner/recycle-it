@@ -8,7 +8,6 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' show join;
 import 'package:path_provider/path_provider.dart';
-
 import 'package:http/http.dart' as http;
 
 var firstCamera;
@@ -37,7 +36,6 @@ Future<void> main() async {
   );
 }
 
-
 class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -59,7 +57,8 @@ class HomePage extends StatelessWidget {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => TakePictureScreen(camera: firstCamera)),
+            MaterialPageRoute(
+                builder: (context) => TakePictureScreen(camera: firstCamera)),
           );
         },
         tooltip: 'Camera',
@@ -92,12 +91,11 @@ class TakePictureScreenState extends State<TakePictureScreen> {
     // To display the current output from the Camera,
     // create a CameraController.
     _controller = CameraController(
-      // Get a specific camera from the list of available cameras.
-      widget.camera,
-      // Define the resolution to use.
-      //ResolutionPreset.medium,
-      ResolutionPreset.max
-    );
+        // Get a specific camera from the list of available cameras.
+        widget.camera,
+        // Define the resolution to use.
+        //ResolutionPreset.medium,
+        ResolutionPreset.high);
 
     // Next, initialize the controller. This returns a Future.
     _initializeControllerFuture = _controller.initialize();
@@ -113,10 +111,8 @@ class TakePictureScreenState extends State<TakePictureScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
       //appBar: AppBar(title: Text('Take a picture')),
 
-      
       // Wait until the controller is initialized before displaying the
       // camera preview. Use a FutureBuilder to display a loading spinner
       // until the controller has finished initializing.
@@ -157,9 +153,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
             final bytes = File(path).readAsBytesSync();
 
             String img64 = base64Encode(bytes);
-            print(img64.substring(0, 100));  
-
-            
+            print(img64.substring(0, 100));
 
             // If the picture was taken, display it on a new screen.
             Navigator.push(
@@ -168,9 +162,6 @@ class TakePictureScreenState extends State<TakePictureScreen> {
                 builder: (context) => RecyclePage(base64img: img64),
               ),
             );
-
-            
-            
           } catch (e) {
             // If an error occurs, log the error to the console.
             print(e);
@@ -181,60 +172,68 @@ class TakePictureScreenState extends State<TakePictureScreen> {
   }
 }
 
-class RecyclePage extends StatelessWidget {
+class RecyclePage extends StatefulWidget {
   final String base64img;
 
   const RecyclePage({Key key, this.base64img}) : super(key: key);
 
-  request() async {
-    var url = 'https://vision.googleapis.com/v1/images:annotate?key=' + key;
+  @override
+  _RecyclePageState createState() => _RecyclePageState();
+}
 
-    var response = await http.post(url,
-      body: {
-        "requests":[
-          {
-            "image":{
-              "content":base64img,
-            },
-            "features":[
-              {
-                "type":"LABEL_DETECTION",
-                "maxResults":5
-              }
-            ]
-          }
-        ]
+class _RecyclePageState extends State<RecyclePage> {
+  Map data;
+  List recycleData;
+
+  Future request() async {
+    String url = 'https://vision.googleapis.com/v1/images:annotate?key=' + key;
+
+    final body = jsonEncode({
+      "requests": [
+        {
+          "image": {
+            "content": "${widget.base64img}"
+          },
+          "features": [
+            {"type": "LABEL_DETECTION", "maxResults": 25}
+          ]
+        }
+      ]
+    });
+
+    final response = await http.post(
+      url,
+      headers: {
+        "accept-encoding" : "appplication/json",
+        "Content-Type": "'application/json'"
+      },
+      body: body
+    );
+
+    if (response.statusCode == 200) {
+      data = json.decode(response.body);
+
+      print(response.body);
+      
+      setState(() {
+        recycleData = data['responses'][0]['labelAnnotations'];
       });
-
-      return response.body;
+    }
   }
 
   @override
-  Widget build(BuildContext context) {
+  void initState() {
+    super.initState();
+    request();
+  }
+
+  @override
+  Widget build(BuildContext context) {    
     return Scaffold(
       appBar: AppBar(
         title: Text("Recycle It"),
       ),
-      //body: Text((base64img.length).toString()),
-      body: request(),
+      body: Text(recycleData.toString()),
     );
   }
 }
-
-// A widget that displays the picture taken by the user.
-/*class DisplayPictureScreen extends StatelessWidget {
-  final String imagePath;
-
-  const DisplayPictureScreen({Key key, this.imagePath}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Display the Picture')),
-      // The image is stored as a file on the device. Use the `Image.file`
-      // constructor with the given path to display the image.
-      body: Image.file(File(imagePath)),
-      
-    );
-  }
-}*/
