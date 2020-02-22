@@ -42,20 +42,19 @@ class HomePage extends StatelessWidget {
             Text(
               'Home page',
             ),
-            IconButton(
-              icon: Icon(Icons.camera),
-              tooltip: 'Take Picture',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => TakePictureScreen(camera: firstCamera)
-                  ),
-                );
-              }
-            ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => TakePictureScreen(camera: firstCamera)),
+          );
+        },
+        tooltip: 'Camera',
+        child: Icon(Icons.camera_alt),
       ),
     );
   }
@@ -104,63 +103,55 @@ class TakePictureScreenState extends State<TakePictureScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      //appBar: AppBar(title: Text('Take a picture')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: <Widget>[
+            FutureBuilder<void>(
+              future: _initializeControllerFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.done) {
+                  return CameraPreview(_controller);
+                } else {
+                  return Center(child: CircularProgressIndicator());
+                }
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.camera),
+              tooltip: 'Take Picture',
+              onPressed: () async {
+                try {
+                  await _initializeControllerFuture;
 
-      // Wait until the controller is initialized before displaying the
-      // camera preview. Use a FutureBuilder to display a loading spinner
-      // until the controller has finished initializing.
-      body: FutureBuilder<void>(
-        future: _initializeControllerFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            // If the Future is complete, display the preview.
-            return CameraPreview(_controller);
-          } else {
-            // Otherwise, display a loading indicator.
-            return Center(child: CircularProgressIndicator());
-          }
-        },
+                  final path = join(
+                    (await getTemporaryDirectory()).path,
+                    '${DateTime.now()}.png',
+                  );
+
+                  await _controller.takePicture(path);
+
+                  final bytes = File(path).readAsBytesSync();
+                  String img64 = base64Encode(bytes);
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RecyclePage(base64img: img64),
+                    ),
+                  );
+                } catch (e) {
+                  print(e);
+                }
+              },
+            ),
+          ],
+        ),
       ),
-      floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.camera_alt),
+
+
         // Provide an onPressed callback.
-        onPressed: () async {
-          // Take the Picture in a try / catch block. If anything goes wrong,
-          // catch the error.
-          try {
-            // Ensure that the camera is initialized.
-            await _initializeControllerFuture;
-
-            // Construct the path where the image should be saved using the
-            // pattern package.
-            final path = join(
-              // Store the picture in the temp directory.
-              // Find the temp directory using the `path_provider` plugin.
-              (await getTemporaryDirectory()).path,
-              '${DateTime.now()}.png',
-            );
-
-            // Attempt to take a picture and log where it's been saved.
-            await _controller.takePicture(path);
-
-            final bytes = File(path).readAsBytesSync();
-
-            String img64 = base64Encode(bytes);
-            print(img64.substring(0, 100));
-
-            // If the picture was taken, display it on a new screen.
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => RecyclePage(base64img: img64),
-              ),
-            );
-          } catch (e) {
-            // If an error occurs, log the error to the console.
-            print(e);
-          }
-        },
-      ),
+        
     );
   }
 }
