@@ -80,24 +80,6 @@ Future<void> main() async {
   print(position);
   placemark = await Geolocator().placemarkFromCoordinates(position.latitude,position.longitude,localeIdentifier:"en_UK");
 
-
-  /*
-   // GEOLOCATION
-    Position position = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-    print(position);
-    List<Placemark> placemark = await Geolocator().placemarkFromCoordinates(position.latitude,position.longitude,localeIdentifier:"en_UK");
-
-    print(placemark[0].postalCode);
-
-    String qstring = placemark[0].postalCode.replaceFirst(' ', '+').substring(0,placemark[0].postalCode.length-1);
-
-    String geoLocationURL = 'https://exeter.gov.uk/repositories/hidden-pages/address-finder/?qtype=bins&term=' + qstring;   
-
-    final GeoResponse = await http.get(geoLocationURL);
-    
-    // GEOLOCATION
-    */
-
   runApp(
     MaterialApp(
       home: HomePage(),
@@ -247,8 +229,14 @@ class TakePictureScreenState extends State<TakePictureScreen> {
           if (snapshot.connectionState == ConnectionState.done) {
             return CameraPreview(_controller);
           } else {
-            return Center(child: CircularProgressIndicator(backgroundColor: Colors.green,valueColor: new AlwaysStoppedAnimation<Color>(Colors.green.shade300)));
-
+            return Center(
+              child: CircularProgressIndicator(
+                backgroundColor: Colors.green,
+                valueColor: new AlwaysStoppedAnimation<Color>(
+                  Colors.green.shade300
+                ),
+              ),
+            );
           }
         },
       ),
@@ -467,13 +455,15 @@ class _RecyclePageState extends State<RecyclePage> {
         backgroundColor: Colors.green.shade300,
       ),
         backgroundColor: Colors.white,
-        body: /* Center(
-          child: Icon(
-            Icons.rotate_right,
-            color: Colors.green.shade300,
-            size: 100,
-      ))) */
-      Center(child: CircularProgressIndicator(backgroundColor: Colors.green,valueColor: new AlwaysStoppedAnimation<Color>(Colors.green.shade300))));
+        body: Center(
+          child: CircularProgressIndicator(
+            backgroundColor: Colors.green,
+            valueColor: new AlwaysStoppedAnimation<Color>(
+              Colors.green.shade300
+            ),
+          ),
+        ),
+      );
     }
   }
 }
@@ -489,7 +479,8 @@ class _MapPageState extends State<MapPage> {
 
   final CameraPosition _cameraPosition = CameraPosition(
     target: LatLng(position.latitude, position.longitude),
-    zoom: 14.4746,
+    //target: LatLng(50.73322766816302, -3.5352093944980663),
+    zoom: 14,
   );
 
   @override
@@ -506,6 +497,8 @@ class _MapPageState extends State<MapPage> {
         onMapCreated: (GoogleMapController controller) {
           _controller.complete(controller);
         },
+        myLocationEnabled: true,
+        myLocationButtonEnabled: false,
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -540,17 +533,10 @@ class _StatsPageState extends State<StatsPage> {
   String htmlBody = "";
 
   Future request() async {
-  
-    
-    print(placemark[0].postalCode);
-
     String qstring = placemark[0].postalCode.replaceFirst(' ', '+').substring(0,placemark[0].postalCode.length-1);
-
     String geoLocationURL = 'https://exeter.gov.uk/repositories/hidden-pages/address-finder/?qtype=bins&term=' + qstring;   
-    print(geoLocationURL);
 
     final geoResponse = await http.get(geoLocationURL);
-    print(geoResponse);
     
     data = json.decode(geoResponse.body);
     htmlBody = data[0]['Results'];
@@ -568,9 +554,7 @@ class _StatsPageState extends State<StatsPage> {
   void initState() {
     super.initState();
     request();
-  }
-
-  
+  } 
 
   @override
   Widget build(BuildContext context) {
@@ -579,6 +563,7 @@ class _StatsPageState extends State<StatsPage> {
         appBar: AppBar(
           title: Text("Recycle It"),
           backgroundColor: Colors.green.shade300,
+          automaticallyImplyLeading: false,        
         ),
         body: Center(
           child: Column(
@@ -593,7 +578,7 @@ class _StatsPageState extends State<StatsPage> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            Navigator.push(
+            Navigator.pushReplacement(
               context,
               MaterialPageRoute(
                 builder: (context) => HomePage()
@@ -611,17 +596,19 @@ class _StatsPageState extends State<StatsPage> {
     else {
       return Scaffold(
         appBar: AppBar(
-        title: Text("Recycle It"),
-        backgroundColor: Colors.green.shade300,
-      ),
+          title: Text("Recycle It"),
+          backgroundColor: Colors.green.shade300,
+        ),
         backgroundColor: Colors.white,
-        body: /* Center(
-          child: Icon(
-            Icons.rotate_right,
-            color: Colors.green.shade300,
-            size: 100,
-      ))) */
-      Center(child: CircularProgressIndicator(backgroundColor: Colors.green,valueColor: new AlwaysStoppedAnimation<Color>(Colors.green.shade300))));
+        body: Center(
+          child: CircularProgressIndicator(
+            backgroundColor: Colors.green,
+            valueColor: new AlwaysStoppedAnimation<Color>(
+              Colors.green.shade300
+            ),
+          ),
+        ),
+      );
     }
   }
 }
