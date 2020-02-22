@@ -103,55 +103,45 @@ class TakePictureScreenState extends State<TakePictureScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: <Widget>[
-            FutureBuilder<void>(
-              future: _initializeControllerFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done) {
-                  return CameraPreview(_controller);
-                } else {
-                  return Center(child: CircularProgressIndicator());
-                }
-              },
-            ),
-            IconButton(
-              icon: Icon(Icons.camera),
-              tooltip: 'Take Picture',
-              onPressed: () async {
-                try {
-                  await _initializeControllerFuture;
-
-                  final path = join(
-                    (await getTemporaryDirectory()).path,
-                    '${DateTime.now()}.png',
-                  );
-
-                  await _controller.takePicture(path);
-
-                  final bytes = File(path).readAsBytesSync();
-                  String img64 = base64Encode(bytes);
-
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => RecyclePage(base64img: img64),
-                    ),
-                  );
-                } catch (e) {
-                  print(e);
-                }
-              },
-            ),
-          ],
-        ),
+      body: FutureBuilder<void>(
+        future: _initializeControllerFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            return CameraPreview(_controller);
+          } else {
+            return Center(child: CircularProgressIndicator());
+          }
+        },
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          try {
+            await _initializeControllerFuture;
 
+            final path = join(
+              (await getTemporaryDirectory()).path,
+              '${DateTime.now()}.png',
+            );
 
-        // Provide an onPressed callback.
-        
+            await _controller.takePicture(path);
+
+            final bytes = File(path).readAsBytesSync();
+            String img64 = base64Encode(bytes);
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => RecyclePage(base64img: img64),
+              ),
+            );
+          } catch (e) {
+            print(e);
+          }
+        },
+        tooltip: 'Camera',
+        child: Icon(Icons.camera),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }
