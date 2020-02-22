@@ -3,12 +3,12 @@ import 'dart:io';
 
 import 'dart:convert';
 
-
-
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' show join;
 import 'package:path_provider/path_provider.dart';
+
+var firstCamera = null;
 
 Future<void> main() async {
   // Ensure that plugin services are initialized so that `availableCameras()`
@@ -19,17 +19,51 @@ Future<void> main() async {
   final cameras = await availableCameras();
 
   // Get a specific camera from the list of available cameras.
-  final firstCamera = cameras.first;
+  firstCamera = cameras.first;
 
   runApp(
     MaterialApp(
-      theme: ThemeData.dark(),
-      home: TakePictureScreen(
-        // Pass the appropriate camera to the TakePictureScreen widget.
-        camera: firstCamera,
+      theme: ThemeData(
+        primarySwatch: Colors.green,
       ),
+      /*home: TakePictureScreen(
+        camera: firstCamera,
+      ),*/
+      home: HomePage(),
     ),
   );
+}
+
+
+class HomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Recycle It"),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              'Home page',
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => TakePictureScreen(camera: firstCamera)),
+          );
+        },
+        tooltip: 'Camera',
+        child: Icon(Icons.camera_alt),
+      ),
+    );
+  }
 }
 
 // A screen that allows users to take a picture using a given camera.
@@ -117,20 +151,22 @@ class TakePictureScreenState extends State<TakePictureScreen> {
             // Attempt to take a picture and log where it's been saved.
             await _controller.takePicture(path);
 
+            final bytes = File(path).readAsBytesSync();
+
+            String img64 = base64Encode(bytes);
+            print(img64.substring(0, 100));  
+
             
 
             // If the picture was taken, display it on a new screen.
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => DisplayPictureScreen(imagePath: path),
+                builder: (context) => RecyclePage(base64img: img64),
               ),
             );
 
-            final bytes = File(path).readAsBytesSync();
-
-            String img64 = base64Encode(bytes);
-            print(img64.substring(0, 100));  
+            
             
           } catch (e) {
             // If an error occurs, log the error to the console.
@@ -142,8 +178,24 @@ class TakePictureScreenState extends State<TakePictureScreen> {
   }
 }
 
+class RecyclePage extends StatelessWidget {
+  final String base64img;
+
+  const RecyclePage({Key key, this.base64img}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Recycle It"),
+      ),
+      body: Text((base64img.length).toString()),
+    );
+  }
+}
+
 // A widget that displays the picture taken by the user.
-class DisplayPictureScreen extends StatelessWidget {
+/*class DisplayPictureScreen extends StatelessWidget {
   final String imagePath;
 
   const DisplayPictureScreen({Key key, this.imagePath}) : super(key: key);
@@ -158,4 +210,4 @@ class DisplayPictureScreen extends StatelessWidget {
       
     );
   }
-}
+}*/
