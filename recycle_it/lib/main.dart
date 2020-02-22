@@ -93,19 +93,23 @@ class HomePage extends StatelessWidget {
                   fontWeight: FontWeight.w300,
                 ),
                 boxHeight: height / 3,
-                loadDuration: Duration(milliseconds: 3500),
+                loadDuration: Duration(milliseconds: 3000),
               ),
             ),
             Padding(
               padding: EdgeInsets.fromLTRB(width/7, 0, width/7, height/7),
-              child: Text(
-                "Give us an image of your rubbish and we'll tell you whether it is recyclable.",
-                style: TextStyle(
-                  fontSize: 16.0,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
+              child: ShowUp(
+                child: Text(
+                  "Give us an image of your rubbish and we'll tell you whether it is recyclable.",
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
+                delay: 1250,
+                bottom: 0.5,
               ),
             ),
           ], 
@@ -145,6 +149,7 @@ class HomePage extends StatelessWidget {
             IconButton(
               icon: Icon(Icons.map),
               color: Colors.white,
+              iconSize: 35,
               onPressed: () {
                 Navigator.push(
                   context,
@@ -157,6 +162,7 @@ class HomePage extends StatelessWidget {
             IconButton(
               icon: Icon(Icons.menu),
               color: Colors.white,
+              iconSize: 35,
               onPressed: () {
                 Navigator.push(
                   context,
@@ -216,7 +222,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
         },
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 35.0),
+        padding: const EdgeInsets.only(bottom: 30.0),
         child: FloatingActionButton(
           onPressed: () async {
             try {
@@ -392,6 +398,7 @@ class _RecyclePageState extends State<RecyclePage> {
                   ),
                 ),
                 delay: 750,
+                bottom: 5.0
               ),
               for (var i = 1; i < recyclableData.length; i++)
                 ShowUp(
@@ -402,12 +409,14 @@ class _RecyclePageState extends State<RecyclePage> {
                     ),
                   ),
                   delay: 1250, 
+                  bottom: 5.0,
                 ),
               ShowUp(
                 child: Text(
                   "Items Scanned: ${returnAddInfo.toString()}",
                 ),
                 delay: 1750,
+                bottom: 5.0,
               ),
             ],
           ),
@@ -417,12 +426,12 @@ class _RecyclePageState extends State<RecyclePage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => TakePictureScreen(camera: firstCamera)
+                builder: (context) => HomePage()
               ),
             );
           },
-          tooltip: 'Camera',
-          child: Icon(Icons.camera_alt),
+          tooltip: 'Home',
+          child: Icon(Icons.home),
           backgroundColor: Colors.green.shade300,
         ),
       );
@@ -462,13 +471,13 @@ class MapPage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => TakePictureScreen(camera: firstCamera)
+              builder: (context) => HomePage()
             ),
           );
         },
-        tooltip: 'Camera',
+        tooltip: 'Home',
         child: Icon(
-          Icons.camera_alt
+          Icons.home
         ),
         backgroundColor: Colors.green.shade300,
       ),
@@ -500,13 +509,13 @@ class StatsPage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => TakePictureScreen(camera: firstCamera)
+              builder: (context) => HomePage()
             ),
           );
         },
-        tooltip: 'Camera',
+        tooltip: 'Home',
         child: Icon(
-          Icons.camera_alt
+          Icons.home
         ),
         backgroundColor: Colors.green.shade300,
       ),
