@@ -64,9 +64,6 @@ Future<void> main() async {
 
   runApp(
     MaterialApp(
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-      ),
       home: HomePage(),
     ),
   );
@@ -83,7 +80,7 @@ class HomePage extends StatelessWidget {
 
       body: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             SizedBox(
               width: width,
@@ -92,17 +89,43 @@ class HomePage extends StatelessWidget {
                 waveColor: Colors.white,
                 boxBackgroundColor: Colors.green.shade300,
                 textStyle: TextStyle(
-                  fontSize: 40.0,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 55.0,
+                  fontWeight: FontWeight.w300,
                 ),
                 boxHeight: height / 3,
                 loadDuration: Duration(milliseconds: 3500),
               ),
             ),
-          ],
+            Padding(
+              padding: EdgeInsets.fromLTRB(width/7, 0, width/7, height/7),
+              child: Text(
+                "Give us an image of your rubbish and we'll tell you whether it is recyclable.",
+                style: TextStyle(
+                  fontSize: 16.0,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ], 
         ),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
+        elevation: 6.0,
+        icon: Icon(
+          Icons.camera_alt,
+          color: Colors.green.shade300,
+        ),
+        label: Text(
+          "Choose Image",
+          style: TextStyle(
+            fontSize: 14.0,
+            color: Colors.green.shade300,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        backgroundColor: Colors.white,
         onPressed: () {
           Navigator.push(
             context,
@@ -110,8 +133,30 @@ class HomePage extends StatelessWidget {
                 builder: (context) => TakePictureScreen(camera: firstCamera)),
           );
         },
-        tooltip: 'Camera',
-        child: Icon(Icons.camera_alt),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: BottomAppBar(
+        color: Colors.green.shade300,
+        child: new Row(
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            IconButton(
+              icon: Icon(Icons.map),
+              color: Colors.white,
+              onPressed: () {
+
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.menu),
+              color: Colors.white,
+              onPressed: () {
+
+              },
+            )
+          ],
+        ),
       ),
     );
   }
