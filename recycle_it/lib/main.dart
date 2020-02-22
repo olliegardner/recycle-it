@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:device_info/device_info.dart';
+import 'package:recycle_it/animation.dart';
 
 import 'credentials.dart';
 
@@ -13,6 +14,7 @@ import 'package:path/path.dart' show join;
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:recase/recase.dart';
+import 'package:flutter_sequence_animation/flutter_sequence_animation.dart';
 
 //potentially have negative keywords
 //offer user an option 'did we get this correct'
@@ -145,7 +147,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
         },
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 40.0),
+        padding: const EdgeInsets.only(bottom: 35.0),
         child: FloatingActionButton(
           onPressed: () async {
             try {
@@ -304,25 +306,45 @@ class _RecyclePageState extends State<RecyclePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              recyclableData[0].toString().titleCase,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 28
+            ShowUp(
+              child: Text(
+                recyclableData[0].toString().titleCase,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 28
+                ),
               ),
+              delay: 500,
             ),
             for (var i = 1; i < recyclableData.length; i++)
-              Text(
-                recyclableData[i].toString().titleCase,
-                style: TextStyle(
-                  fontSize: 20
+              ShowUp(
+                child: Text(
+                  recyclableData[i].toString().titleCase,
+                  style: TextStyle(
+                    fontSize: 20
+                  ),
                 ),
-              ), 
-            Text(
-              "Items Scanned: ${returnAddInfo.toString()}",
+                delay: 1000, 
+              ),
+            ShowUp(
+              child: Text(
+                "Items Scanned: ${returnAddInfo.toString()}",
+              ),
+              delay: 1500,
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => TakePictureScreen(camera: firstCamera)),
+          );
+        },
+        tooltip: 'Camera',
+        child: Icon(Icons.camera_alt),
       ),
     );
   }
