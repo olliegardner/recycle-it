@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:device_info/device_info.dart';
+import 'package:recycle_it/animation.dart';
 
 import 'credentials.dart';
 
 import 'package:geolocator/geolocator.dart';
-
 
 import 'package:mongo_dart/mongo_dart.dart' as mongo;
 
@@ -49,8 +49,13 @@ var recyclables = [
   "catalogue",
   "phone directory",
   "drinkware",
-
-
+  "tin",
+  "tin can",
+  "can",
+  "aluminum",
+  "aluminum can",
+  
+  
   "interior design",
   "room"
 ];
@@ -62,6 +67,23 @@ Future<void> main() async {
 
   final cameras = await availableCameras();
   firstCamera = cameras.first;
+
+  /*
+   // GEOLOCATION
+    Position position = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    print(position);
+    List<Placemark> placemark = await Geolocator().placemarkFromCoordinates(position.latitude,position.longitude,localeIdentifier:"en_UK");
+
+    print(placemark[0].postalCode);
+
+    String qstring = placemark[0].postalCode.replaceFirst(' ', '+').substring(0,placemark[0].postalCode.length-1);
+
+    String geoLocationURL = 'https://exeter.gov.uk/repositories/hidden-pages/address-finder/?qtype=bins&term=' + qstring;   
+
+    final GeoResponse = await http.get(geoLocationURL);
+    
+    // GEOLOCATION
+    */
 
   runApp(
     MaterialApp(
@@ -148,7 +170,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
         },
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 40.0),
+        padding: const EdgeInsets.only(bottom: 35.0),
         child: FloatingActionButton(
           onPressed: () async {
             try {
@@ -198,25 +220,6 @@ class _RecyclePageState extends State<RecyclePage> {
   int returnAddInfo = 0;
 
   Future request() async {
-    
-    
-    
-    // GEOLOCATION
-    Position position = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-    print(position);
-    List<Placemark> placemark = await Geolocator().placemarkFromCoordinates(position.latitude,position.longitude,localeIdentifier:"en_UK");
-
-    print(placemark[0].postalCode);
-
-    String qstring = placemark[0].postalCode.replaceFirst(' ', '+').substring(0,-1);
-
-    String geoLocationURL = 'https://exeter.gov.uk/repositories/hidden-pages/address-finder/?qtype=bins&term=' + qstring;   
-
-    final GeoResponse = await http.get(geoLocationURL);
-    
-    // GEOLOCATION
-
-
     String url = 'https://vision.googleapis.com/v1/images:annotate?key=' + key;
 
     final body = jsonEncode({
@@ -242,7 +245,7 @@ class _RecyclePageState extends State<RecyclePage> {
 
       print(response.body);
 
-      List temp = [];
+      List temp = ['NOT RECYCLABLE'];
       var addInfo;
 
       if (data['responses'][0]['labelAnnotations'].length != null) {
@@ -252,8 +255,9 @@ class _RecyclePageState extends State<RecyclePage> {
           if (recyclables.contains(data['responses'][0]['labelAnnotations'][i]
                   ['description']
               .toLowerCase())) {
+                temp.removeLast();
             temp.add(data['responses'][0]['labelAnnotations'][i]['description']
-                    .toLowerCase());
+                .toLowerCase());
           }
         }
         for (int i = 0;
@@ -263,7 +267,7 @@ class _RecyclePageState extends State<RecyclePage> {
                   [i]['description']
               .toLowerCase())) {
             //hit a negative so clear string
-            temp = [];
+            temp = ['NOT RECYCLABLE'];
           }
         }
         if (temp != []) {
@@ -271,7 +275,7 @@ class _RecyclePageState extends State<RecyclePage> {
           var id = '';
           if (Platform.isAndroid) {
             AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-            id =androidInfo.androidId;
+            id = androidInfo.androidId;
             print('Running on ${androidInfo.androidId}');
           } else if (Platform.isIOS) {
             IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
@@ -284,23 +288,20 @@ class _RecyclePageState extends State<RecyclePage> {
           await db.open();
 
           var coll = db.collection('data');
-          await coll.insert({
-            'uuid': id,
-            'kws': temp,
-            'created_at': new DateTime.now()
-          });
+          await coll.insert(
+              {'uuid': id, 'kws': temp, 'created_at': new DateTime.now()});
 
-          addInfo = await coll.count({
-            'uuid': id
-          });
+          addInfo = await coll.count({'uuid': id});
         } else {
-          print('dont insert unrecyclable doc');
+          temp = ['NOT RECYCLABLE'];
         }
       }
 
+      print(temp);
+
       setState(() {
         if (temp == []) {
-          recyclableData = ['No matches'];
+          recyclableData = [];
         } else {
           recyclableData = temp;
           returnAddInfo = addInfo;
@@ -317,35 +318,66 @@ class _RecyclePageState extends State<RecyclePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Recycle It"),
-      ),
-
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              recyclableData[0].toString().titleCase,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 28
-              ),
-            ),
-            for (var i = 1; i < recyclableData.length; i++)
-              Text(
-                recyclableData[i].toString().titleCase,
-                style: TextStyle(
-                  fontSize: 20
-                ),
-              ), 
-            Text(
-              "Items Scanned: ${returnAddInfo.toString()}",
-            ),
-          ],
+    print(recyclableData);
+    if (recyclableData.length != 0 && recyclableData != null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text("Recycle It"),
         ),
-      ),
-    );
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ShowUp(
+                child: Text(
+                  recyclableData[0].toString().titleCase,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 28),
+                ),
+                delay: 750,
+              ),
+              for (var i = 1; i < recyclableData.length; i++)
+                ShowUp(
+                  child: Text(
+                    recyclableData[i].toString().titleCase,
+                    style: TextStyle(fontSize: 20),
+                  ),
+                  delay: 1250,
+                ),
+              ShowUp(
+                child: Text(
+                  "Items Scanned: ${returnAddInfo.toString()}",
+                ),
+                delay: 1750,
+              ),
+            ],
+          ),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => TakePictureScreen(camera: firstCamera)),
+            );
+          },
+          tooltip: 'Camera',
+          child: Icon(Icons.camera_alt),
+        ),
+      );
+    } else if (recyclableData == null) {
+      return Center(
+          child: Icon(
+        Icons.backspace,
+        color: Colors.red,
+        size: 100,
+      ));
+    }  else {
+      return Center(
+          child: Icon(
+        Icons.check,
+        color: Colors.green,
+        size: 100,
+      ));
+    }
   }
 }
