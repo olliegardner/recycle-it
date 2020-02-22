@@ -13,14 +13,9 @@ import 'package:http/http.dart' as http;
 var firstCamera;
 
 Future<void> main() async {
-  // Ensure that plugin services are initialized so that `availableCameras()`
-  // can be called before `runApp()`
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Obtain a list of the available cameras on the device.
   final cameras = await availableCameras();
-
-  // Get a specific camera from the list of available cameras.
   firstCamera = cameras.first;
 
   runApp(
@@ -28,9 +23,6 @@ Future<void> main() async {
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
-      /*home: TakePictureScreen(
-        camera: firstCamera,
-      ),*/
       home: HomePage(),
     ),
   );
@@ -50,19 +42,20 @@ class HomePage extends StatelessWidget {
             Text(
               'Home page',
             ),
+            IconButton(
+              icon: Icon(Icons.camera),
+              tooltip: 'Take Picture',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TakePictureScreen(camera: firstCamera)
+                  ),
+                );
+              }
+            ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => TakePictureScreen(camera: firstCamera)),
-          );
-        },
-        tooltip: 'Camera',
-        child: Icon(Icons.camera_alt),
       ),
     );
   }
