@@ -5,6 +5,8 @@ A recycling app who's aim is to solve the world's massive waste problem. The app
 The app was built for the Sustainability track at JunctionX's Exeter based Hackathon in 2020. The hackathon was spread over 3 days and lasted for 52 hours.
 https://junctionxexeter.com/
 
+## App Demo
+
 ## Technologies
 The app was developed with:
 * Flutter | https://flutter.dev/
