@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:device_info/device_info.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_webview_plugin/flutter_webview_plugin.dart';
 import 'package:recycle_it/animation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mongo_dart/mongo_dart.dart' as mongo;
@@ -43,9 +44,7 @@ var recyclables = [
   "catalogue",
   "phone directory",
   "drinkware",
-  
-  "interior design",
-  "room"
+  "coffee cup",
 ];
 
 var plastics = [
@@ -64,6 +63,8 @@ var cans = [
   "can",
   "aluminum",
   "aluminum can",
+  "beverage can",
+  "metal"
 ];
 
 var food = [
@@ -149,25 +150,22 @@ class HomePage extends StatelessWidget {
         elevation: 0.0,
         actions: <Widget>[
           IconButton(
-              icon: Icon(
-                Icons.insert_chart,
-                size: 35.0,
-              ),
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => StatsPage(),
-                  ),
-                );
-              },
-              padding: const EdgeInsets.only(
-                right: 15.0
-              ),
+            icon: Icon(
+              Icons.insert_chart,
+              size: 35.0,
             ),
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => StatsPage(),
+                ),
+              );
+            },
+            padding: const EdgeInsets.only(right: 15.0),
+          ),
         ],
       ),
-
       backgroundColor: Colors.green.shade300,
       body: Center(
         child: Column(
@@ -211,9 +209,7 @@ class HomePage extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(
-              height: height / 26
-            ),
+            SizedBox(height: height / 26),
             Padding(
               padding: EdgeInsets.fromLTRB(width / 7, 0, width / 7, 0),
               child: ShowUp(
@@ -423,78 +419,89 @@ class _RecyclePageState extends State<RecyclePage> {
     if (response.statusCode == 200) {
       data = json.decode(response.body);
 
-      List temp = ['NOT RECYCLABLE'];
-      List temp2 = [0.0];
-      var addInfo;
+      if (data['responses'] != [{}]) {
+        List temp = ['NOT RECYCLABLE'];
+        List temp2 = [0.0];
+        var addInfo;
 
-      if (data['responses'][0]['labelAnnotations'].length != null) {
-        for (int i = 0;
-            i < data['responses'][0]['labelAnnotations'].length;
-            i++) {
-          var compareData = data['responses'][0]['labelAnnotations'][i]
-                  ['description']
-              .toLowerCase();
-          if (recyclables.contains(compareData) ||
-              plastics.contains(compareData) ||
-              glass.contains(compareData) ||
-              cans.contains(compareData) ||
-              food.contains(compareData)) {
-            if (temp.contains('NOT RECYCLABLE')) temp.remove('NOT RECYCLABLE');
-            if (temp2.contains(0.0)) temp2.remove(0.0);
-            
+        if (data['responses'][0]['labelAnnotations'].length != null) {
+          for (int i = 0;
+              i < data['responses'][0]['labelAnnotations'].length;
+              i++) {
+            var compareData = data['responses'][0]['labelAnnotations'][i]
+                    ['description']
+                .toLowerCase();
+            if (recyclables.contains(compareData) ||
+                plastics.contains(compareData) ||
+                glass.contains(compareData) ||
+                cans.contains(compareData) ||
+                food.contains(compareData)) {
+              if (temp.contains('NOT RECYCLABLE'))
+                temp.remove('NOT RECYCLABLE');
+              if (temp2.contains(0.0)) temp2.remove(0.0);
 
-            temp.add(data['responses'][0]['labelAnnotations'][i]['description'].toLowerCase());
-            if (whichbin == ''){
-              if(recyclables.contains(compareData)){whichbin = 'Mixed recycling';}
-              else if(plastics.contains(compareData)){whichbin = 'Plastic recycling';}
-              else if(glass.contains(compareData)){whichbin = 'Glass recycling';}
-              else if(cans.contains(compareData)){whichbin = 'Can recycling';}
-              else if(food.contains(compareData)){whichbin = 'Food recycling';}
-            };
-            temp2.add(data['responses'][0]['labelAnnotations'][i]['score']);
+              temp.add(data['responses'][0]['labelAnnotations'][i]
+                      ['description']
+                  .toLowerCase());
+              if (whichbin == '') {
+                if (recyclables.contains(compareData)) {
+                  whichbin = 'Mixed recycling';
+                } else if (plastics.contains(compareData)) {
+                  whichbin = 'Plastic recycling';
+                } else if (glass.contains(compareData)) {
+                  whichbin = 'Glass recycling';
+                } else if (cans.contains(compareData)) {
+                  whichbin = 'Can recycling';
+                } else if (food.contains(compareData)) {
+                  whichbin = 'Food recycling';
+                }
+              }
+              ;
+              temp2.add(data['responses'][0]['labelAnnotations'][i]['score']);
+            }
           }
-        }
 
-        for (int i = 0;
-            i < data['responses'][0]['labelAnnotations'].length;
-            i++) {
-          if (negativeKeywords.contains(data['responses'][0]['labelAnnotations']
-                  [i]['description']
-              .toLowerCase())) {
-            //hit a negative so clear string
+          for (int i = 0;
+              i < data['responses'][0]['labelAnnotations'].length;
+              i++) {
+            if (negativeKeywords.contains(data['responses'][0]
+                    ['labelAnnotations'][i]['description']
+                .toLowerCase())) {
+              //hit a negative so clear string
+              temp = ['NOT RECYCLABLE'];
+              temp2 = [0.0];
+            }
+          }
+          if (temp != []) {
+            if (!temp.contains('NOT RECYCLABLE') && !temp2.contains(0.0)) {
+              await coll.insert({
+                'uuid': uuid,
+                'kws': temp,
+                'created_at': new DateTime.now(),
+                'lat': position.latitude,
+                "long": position.longitude,
+                "type": whichbin
+              });
+            }
+
+            addInfo = await coll.count({'uuid': uuid});
+          } else {
             temp = ['NOT RECYCLABLE'];
             temp2 = [0.0];
           }
         }
-        if (temp != []) {
-          if (!temp.contains('NOT RECYCLABLE') && !temp2.contains(0.0)) {
-            await coll.insert({
-              'uuid': uuid,
-              'kws': temp,
-              'created_at': new DateTime.now(),
-              'lat': position.latitude,
-              "long": position.longitude,
-              "type": whichbin
-            });
+
+        setState(() {
+          if (temp == []) {
+            recyclableData = [];
+            scoreData = [];
+          } else {
+            recyclableData = temp;
+            scoreData = temp2;
+            returnAddInfo = addInfo;
           }
-
-          addInfo = await coll.count({'uuid': uuid});
-        } else {
-          temp = ['NOT RECYCLABLE'];
-          temp2 = [0.0];
-        }
+        });
       }
-
-      setState(() {
-        if (temp == []) {
-          recyclableData = [];
-          scoreData = [];
-        } else {
-          recyclableData = temp;
-          scoreData = temp2;
-          returnAddInfo = addInfo;
-        }
-      });
     }
   }
 
@@ -520,35 +527,34 @@ class _RecyclePageState extends State<RecyclePage> {
           ),
           body: Center(
             child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              ShowUp(
-                child: Text(
-                  "Not recyclable",
-                  style: TextStyle(
-                    fontSize: 28.0,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  ShowUp(
+                    child: Text(
+                      "Not recyclable",
+                      style: TextStyle(
+                        fontSize: 28.0,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    delay: 1500,
+                    bottom: 0.5,
                   ),
-                ),
-                delay: 1500,
-                bottom: 0.5,
-              ),
-              SizedBox(
-                height: 15,
-              ),
-              ShowUp(
-                child: Text(
-                  "Put your rubbish in the general waste",
-                  style: TextStyle(
-                    fontSize: 14.0,
+                  SizedBox(
+                    height: 15,
                   ),
-                ),
-                delay: 2000,
-                bottom: 0.5,
-              ),
-            ]
-            ),
+                  ShowUp(
+                    child: Text(
+                      "Put your rubbish in the general waste",
+                      style: TextStyle(
+                        fontSize: 14.0,
+                      ),
+                    ),
+                    delay: 2000,
+                    bottom: 0.5,
+                  ),
+                ]),
           ),
           floatingActionButton: FloatingActionButton(
             onPressed: () {
@@ -689,16 +695,16 @@ class _RecyclePageState extends State<RecyclePage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
                     ShowUp(
-                      child: Icon(
-                        Icons.cached,
-                        color: binColours[whichbin]
-                      ),
+                      child: Icon(Icons.cached, color: binColours[whichbin]),
                       delay: 2750,
                       bottom: 5.0,
-                    ),   
+                    ),
                     ShowUp(
                       child: Text(
-                        " " + binColoursString[whichbin] + " " + "recycling bin".titleCase,
+                        " " +
+                            binColoursString[whichbin] +
+                            " " +
+                            "recycling bin".titleCase,
                         style: TextStyle(
                           color: binColours[whichbin],
                           fontSize: 20.0,
@@ -750,7 +756,10 @@ class MapPage extends StatefulWidget {
   State<MapPage> createState() => _MapPageState();
 }
 
+
+
 class _MapPageState extends State<MapPage> {
+  
   static final CameraPosition _cameraPosition = CameraPosition(
     target: LatLng(position.latitude, position.longitude),
     zoom: 14,
@@ -766,28 +775,28 @@ class _MapPageState extends State<MapPage> {
       _markers.clear();
 
       int counter = 0;
-      var iconColor = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
+      var iconColor =
+          BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
 
       for (var loc in locations) {
-        if (loc['type'] == 'Mixed recycling'){ iconColor = BitmapDescriptor.defaultMarkerWithHue(210.0);}
-        else if (loc['type'] == 'Plastic recycling'){ iconColor = BitmapDescriptor.defaultMarkerWithHue(359.0);}
-        else if (loc['type'] == 'Glass recycling'){ iconColor = BitmapDescriptor.defaultMarkerWithHue(178.0);}
-        else if (loc['type'] == 'Can recycling'){ iconColor = BitmapDescriptor.defaultMarkerWithHue(263.0);}
-        else if (loc['type'] == 'Food recycling'){ iconColor = BitmapDescriptor.defaultMarkerWithHue(42.0);}
+        if (loc['type'] == 'Mixed recycling') {
+          iconColor = BitmapDescriptor.defaultMarkerWithHue(210.0);
+        } else if (loc['type'] == 'Plastic recycling') {
+          iconColor = BitmapDescriptor.defaultMarkerWithHue(359.0);
+        } else if (loc['type'] == 'Glass recycling') {
+          iconColor = BitmapDescriptor.defaultMarkerWithHue(178.0);
+        } else if (loc['type'] == 'Can recycling') {
+          iconColor = BitmapDescriptor.defaultMarkerWithHue(263.0);
+        } else if (loc['type'] == 'Food recycling') {
+          iconColor = BitmapDescriptor.defaultMarkerWithHue(42.0);
+        }
 
         final marker = Marker(
           markerId: MarkerId(counter.toString()),
           position: LatLng(loc['lat'], loc['long']),
           draggable: false,
           icon: iconColor,
-          
-          infoWindow: InfoWindow(
-            onTap: () {
-           return Scaffold(
-             body: Text("helo"),
-           );
-        }),
-          
+          infoWindow: InfoWindow(title: loc['type']),
         );
         _markers[counter.toString()] = marker;
         counter++;
@@ -882,6 +891,10 @@ class _CalendarPageState extends State<CalendarPage> {
             children: [
               Html(
                 data: htmlBody,
+                onLinkTap: (url) {
+                  
+                  return new WebviewScaffold(url: url);
+                },
                 padding: EdgeInsets.all(20.0),
               )
             ],
@@ -934,24 +947,40 @@ class _StatsPageState extends State<StatsPage> {
 
   Future<void> request() async {
     var coll = db.collection('data');
-    stats = [{'name':'plastic','num':await coll.count({"uuid":uuid,"type":"Plastic recycling"})},
-    {'name':'food','num':await coll.count({"uuid":uuid,"type":"Food recycling"})},
-    {'name':'mixed','num':await coll.count({"uuid":uuid,"type":"Mixed recycling"})},
-    {'name':'can','num':await coll.count({"uuid":uuid,"type":"Can recycling"})},
-    {'name':'glass','num':await coll.count({"uuid":uuid,"type":"Glass recycling"})}];
-    
-    for(int c = 0;c <stats.length;c++){
+    stats = [
+      {
+        'name': 'plastic',
+        'num': await coll.count({"uuid": uuid, "type": "Plastic recycling"})
+      },
+      {
+        'name': 'food',
+        'num': await coll.count({"uuid": uuid, "type": "Food recycling"})
+      },
+      {
+        'name': 'mixed',
+        'num': await coll.count({"uuid": uuid, "type": "Mixed recycling"})
+      },
+      {
+        'name': 'can',
+        'num': await coll.count({"uuid": uuid, "type": "Can recycling"})
+      },
+      {
+        'name': 'glass',
+        'num': await coll.count({"uuid": uuid, "type": "Glass recycling"})
+      }
+    ];
+
+    for (int c = 0; c < stats.length; c++) {
       stats_total += stats[c]['num'];
     }
-    if (stats_total == 0){
+    if (stats_total == 0) {
       stats_total = 1;
     }
     setState(() {
       stats;
       stats_total;
-      });
+    });
   }
-  
 
   @override
   void initState() {
@@ -972,30 +1001,27 @@ class _StatsPageState extends State<StatsPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              for(int stat =0; stat<stats.length;stat++)
+              for (int stat = 0; stat < stats.length; stat++)
                 ShowUp(
-                    child: SizedBox(
-                      
-                      width: 150,
-                      height: 50,
-                      child: LiquidLinearProgressIndicator(
-                        value: stats[stat]['num']/stats_total,
-                        backgroundColor: Colors.grey.shade100,
-                        valueColor: AlwaysStoppedAnimation(Colors.green.shade300),
-                        direction: Axis.horizontal,
-                        center: Text(
-                          stats[stat]['name'] + " - " + stats[stat]['num'].toString()
-                        ),
-                        borderColor: Colors.grey.shade200,
-                        borderWidth: 2.0,
-                      ),
+                  child: SizedBox(
+                    width: 150,
+                    height: 50,
+                    child: LiquidLinearProgressIndicator(
+                      value: stats[stat]['num'] / stats_total,
+                      backgroundColor: Colors.grey.shade100,
+                      valueColor: AlwaysStoppedAnimation(Colors.green.shade300),
+                      direction: Axis.horizontal,
+                      center: Text(stats[stat]['name'] +
+                          " - " +
+                          stats[stat]['num'].toString()),
+                      borderColor: Colors.grey.shade200,
+                      borderWidth: 2.0,
                     ),
-                    delay: 1250,
-                    bottom: 0.5,
-                  )
-
-              
-              ],
+                  ),
+                  delay: 1250,
+                  bottom: 0.5,
+                )
+            ],
           ),
         ),
         floatingActionButton: FloatingActionButton(
