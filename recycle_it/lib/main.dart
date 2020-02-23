@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ffi';
 import 'dart:io';
 import 'dart:convert';
 import 'package:device_info/device_info.dart';
@@ -20,6 +21,7 @@ import 'package:http/http.dart' as http;
 import 'package:recase/recase.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:liquid_progress_indicator/liquid_progress_indicator.dart';
 
 //potentially have negative keywords
 //offer user an option 'did we get this correct'
@@ -121,7 +123,7 @@ class HomePage extends StatelessWidget {
               padding: EdgeInsets.fromLTRB(width/7, 0, width/7, height/7),
               child: ShowUp(
                 child: Text(
-                  "Give us an image of your rubbish and we'll tell you whether it is recyclable.",
+                  "Take a picture of your rubbish and we will tell you whether it is recyclable.",
                   style: TextStyle(
                     fontSize: 16.0,
                     color: Colors.white,
@@ -174,6 +176,7 @@ class HomePage extends StatelessWidget {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(builder: (context) => MapPage()),
+                  //MaterialPageRoute(builder: (context) => LiquidCircularProgressIndicatorPage()),
                 );
               },
             ),
@@ -293,6 +296,7 @@ class RecyclePage extends StatefulWidget {
 class _RecyclePageState extends State<RecyclePage> {
   Map data;
   List recyclableData = [];
+  List scoreData = [];
   int returnAddInfo = 0;
 
   Future request() async {
@@ -322,31 +326,26 @@ class _RecyclePageState extends State<RecyclePage> {
       print(response.body);
 
       List temp = ['NOT RECYCLABLE'];
+      List temp2 = [0.0];
       var addInfo;
 
       if (data['responses'][0]['labelAnnotations'].length != null) {
-        for (int i = 0;
-            i < data['responses'][0]['labelAnnotations'].length;
-            i++) {
-          if (recyclables.contains(data['responses'][0]['labelAnnotations'][i]
-                  ['description']
-              .toLowerCase())) {
-            if (temp.contains('NOT RECYCLABLE')) {
-              temp.remove('NOT RECYCLABLE');
-            }
+        for (int i = 0; i < data['responses'][0]['labelAnnotations'].length; i++) {
+          if (recyclables.contains(data['responses'][0]['labelAnnotations'][i]['description'].toLowerCase())) {
+            if (temp.contains('NOT RECYCLABLE')) temp.remove('NOT RECYCLABLE');
 
-            temp.add(data['responses'][0]['labelAnnotations'][i]['description']
-                .toLowerCase());
+            if (temp2.contains(0.0)) temp2.remove(0.0);
+
+            temp.add(data['responses'][0]['labelAnnotations'][i]['description'].toLowerCase());
+            temp2.add(data['responses'][0]['labelAnnotations'][i]['score']);
           }
         }
-        for (int i = 0;
-            i < data['responses'][0]['labelAnnotations'].length;
-            i++) {
-          if (negativeKeywords.contains(data['responses'][0]['labelAnnotations']
-                  [i]['description']
-              .toLowerCase())) {
+
+        for (int i = 0; i < data['responses'][0]['labelAnnotations'].length; i++) {
+          if (negativeKeywords.contains(data['responses'][0]['labelAnnotations'][i]['description'].toLowerCase())) {
             //hit a negative so clear string
             temp = ['NOT RECYCLABLE'];
+            temp2 = [0.0];
           }
         }
         if (temp != []) {
@@ -363,7 +362,7 @@ class _RecyclePageState extends State<RecyclePage> {
             print('Running on ${iosInfo.identifierForVendor}');
           }
 
-          if (!temp.contains('NOT RECYCLABLE')) {
+          if (!temp.contains('NOT RECYCLABLE') && !temp2.contains(0.0)) {
             await coll.insert(
                 {'uuid': id, 'kws': temp, 'created_at': new DateTime.now(), 'lat': position.latitude, "long": position.longitude});
           }
@@ -371,6 +370,7 @@ class _RecyclePageState extends State<RecyclePage> {
           addInfo = await coll.count({'uuid': id});
         } else {
           temp = ['NOT RECYCLABLE'];
+          temp2 = [0.0];
         }
       }
 
@@ -379,8 +379,10 @@ class _RecyclePageState extends State<RecyclePage> {
       setState(() {
         if (temp == []) {
           recyclableData = [];
+          scoreData = [];
         } else {
           recyclableData = temp;
+          scoreData = temp2;
           returnAddInfo = addInfo;
         }
       });
@@ -396,7 +398,8 @@ class _RecyclePageState extends State<RecyclePage> {
   @override
   Widget build(BuildContext context) {
     print(recyclableData);
-    if (recyclableData.length != 0 && recyclableData != null) {
+
+    if (recyclableData.length != 0 && recyclableData != null && scoreData.length != 0 && scoreData != null) {
       return Scaffold(
         appBar: AppBar(
           title: Text("Recycle It"),
@@ -405,31 +408,125 @@ class _RecyclePageState extends State<RecyclePage> {
         ),
         body: Center(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: <Widget>[
               ShowUp(
-                child: Text(
-                  recyclableData[0].toString().titleCase,
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 28),
+                child:Text(
+                  "Your rubbish is recyclable!",
+                  style: TextStyle(
+                    fontSize: 26.0,
+                    fontWeight: FontWeight.w300,
+                  ),
                 ),
                 delay: 750,
-                bottom: 5.0
+                bottom: 0.5,
               ),
-              for (var i = 1; i < recyclableData.length; i++)
-                ShowUp(
-                  child: Text(
-                    recyclableData[i].toString().titleCase,
-                    style: TextStyle(fontSize: 20),
-                  ),
-                  delay: 1250, 
-                  bottom: 5.0,
-                ),
               ShowUp(
-                child: Text(
-                  "Items Scanned: ${returnAddInfo.toString()}",
+                child: SizedBox(
+                  width: 150,
+                  height: 150,
+                  child: LiquidCircularProgressIndicator(
+                    value: scoreData[0],
+                    backgroundColor: Colors.grey.shade100,
+                    valueColor: AlwaysStoppedAnimation(Colors.green.shade300),
+                    direction: Axis.vertical,
+                    center: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(0, 28, 0, 0),
+                          child:
+                          Text(
+                            recyclableData[0].toString().titleCase,
+                            style: TextStyle(
+                              fontSize: 16.0,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
+                            ),
+                            textAlign: TextAlign.center,                        
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(0, 12, 0, 0),
+                          child:
+                          Text(
+                            (scoreData[0] * 100).toString().substring(0,4) + "%",
+                            style: TextStyle(
+                              fontSize: 13.0,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.black,
+                            ),
+                            textAlign: TextAlign.center,                        
+                          ),
+                        ),
+                      ],
+                    ),
+                    borderColor: Colors.grey.shade200,
+                    borderWidth: 2.0,
+                  ),
                 ),
-                delay: 1750,
-                bottom: 5.0,
+              delay: 1250,
+              bottom: 5.0,
+              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: <Widget>[
+                for (var i = 1; i < recyclableData.length && i < 5; i++)
+                  ShowUp(
+                    child: SizedBox(
+                      width: 75,
+                      height: 75,
+                      child: LiquidCircularProgressIndicator(
+                        value: scoreData[i],
+                        backgroundColor: Colors.grey.shade100,
+                        valueColor: AlwaysStoppedAnimation(Colors.green.shade300),
+                        direction: Axis.vertical,
+                        center: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(0, 14, 0, 0),
+                              child:
+                              Text(
+                                recyclableData[i].toString().titleCase,
+                                style: TextStyle(
+                                  fontSize: 12.0,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black,
+                                ),
+                                textAlign: TextAlign.center,                        
+                              ),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(0, 6, 0, 0),
+                              child:
+                              Text(
+                                (scoreData[i] * 100).toString().substring(0,4) + "%",
+                                style: TextStyle(
+                                  fontSize: 10.0,
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.black,
+                                ),
+                                textAlign: TextAlign.center,                        
+                              ),
+                            ),
+                          ],
+                        ),
+                        borderColor: Colors.grey.shade200,
+                        borderWidth: 2.0,
+                      ),
+                    ),
+                    delay: 2250,
+                    bottom: 5.0,
+                  ),
+              ],
+            ),
+            ShowUp(
+              child: Text(
+                "Items Scanned: ${returnAddInfo.toString()}",
+              ),
+              delay: 3250,
+              bottom: 5.0,
               ),
             ],
           ),
@@ -475,11 +572,9 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
-  //Completer<GoogleMapController> _controller = Completer();
 
   final CameraPosition _cameraPosition = CameraPosition(
     target: LatLng(position.latitude, position.longitude),
-    //target: LatLng(50.73322766816302, -3.5352093944980663),
     zoom: 14,
   );
 
