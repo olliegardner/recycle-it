@@ -607,8 +607,8 @@ class _RecyclePageState extends State<RecyclePage> {
                             child: Text(
                               recyclableData[0].toString().titleCase,
                               style: TextStyle(
-                                fontSize: 18.0,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 24.0,
+                                fontWeight: FontWeight.w800,
                                 color: Colors.black,
                               ),
                               textAlign: TextAlign.center,
@@ -789,6 +789,8 @@ class _MapPageState extends State<MapPage> {
           iconColor = BitmapDescriptor.defaultMarkerWithHue(263.0);
         } else if (loc['type'] == 'Food recycling') {
           iconColor = BitmapDescriptor.defaultMarkerWithHue(42.0);
+        }else{
+          continue;
         }
 
         final marker = Marker(
@@ -947,30 +949,13 @@ class _StatsPageState extends State<StatsPage> {
 
   Future<void> request() async {
     var coll = db.collection('data');
-    stats = [
-      {
-        'name': 'plastic',
-        'num': await coll.count({"uuid": uuid, "type": "Plastic recycling"})
-      },
-      {
-        'name': 'food',
-        'num': await coll.count({"uuid": uuid, "type": "Food recycling"})
-      },
-      {
-        'name': 'mixed',
-        'num': await coll.count({"uuid": uuid, "type": "Mixed recycling"})
-      },
-      {
-        'name': 'can',
-        'num': await coll.count({"uuid": uuid, "type": "Can recycling"})
-      },
-      {
-        'name': 'glass',
-        'num': await coll.count({"uuid": uuid, "type": "Glass recycling"})
-      }
-    ];
-
-    for (int c = 0; c < stats.length; c++) {
+    stats = [{'name':'plastic','num':await coll.count({"uuid":uuid,"type":"Plastic recycling"})},
+    {'name':'food','num':await coll.count({"uuid":uuid,"type":"Food recycling"})},
+    {'name':'mixed','num':await coll.count({"uuid":uuid,"type":"Mixed recycling"})},
+    {'name':'can','num':await coll.count({"uuid":uuid,"type":"Can recycling"})},
+    {'name':'glass','num':await coll.count({"uuid":uuid,"type":"Glass recycling"})}];
+    
+    for(int c = 0; c<stats.length; c++) {
       stats_total += stats[c]['num'];
     }
     if (stats_total == 0) {
@@ -982,6 +967,7 @@ class _StatsPageState extends State<StatsPage> {
     });
   }
 
+  
   @override
   void initState() {
     super.initState();
@@ -990,6 +976,8 @@ class _StatsPageState extends State<StatsPage> {
 
   @override
   Widget build(BuildContext context) {
+    int intitialDelay = 750;
+
     if (stats_total != 0) {
       return Scaffold(
         appBar: AppBar(
@@ -999,28 +987,72 @@ class _StatsPageState extends State<StatsPage> {
         ),
         body: Center(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              for (int stat = 0; stat < stats.length; stat++)
-                ShowUp(
-                  child: SizedBox(
-                    width: 150,
-                    height: 50,
-                    child: LiquidLinearProgressIndicator(
-                      value: stats[stat]['num'] / stats_total,
-                      backgroundColor: Colors.grey.shade100,
-                      valueColor: AlwaysStoppedAnimation(Colors.green.shade300),
-                      direction: Axis.horizontal,
-                      center: Text(stats[stat]['name'] +
-                          " - " +
-                          stats[stat]['num'].toString()),
-                      borderColor: Colors.grey.shade200,
-                      borderWidth: 2.0,
-                    ),
+              ShowUp(
+                child: Text(
+                  "Your Statistics",
+                  style: TextStyle(
+                    fontSize: 28.0,
+                    fontWeight: FontWeight.w300,
                   ),
-                  delay: 1250,
-                  bottom: 0.5,
-                )
+                  textAlign: TextAlign.start,
+                ),
+                delay: 750,
+                bottom: 0.5,
+              ),
+              for (int stat=0; stat<stats.length; stat++)
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    ShowUp(
+                      child: Text(
+                        stats[stat]['name'].toString().titleCase,
+                        style: TextStyle(
+                          fontSize: 14.0,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      delay: intitialDelay,
+                      bottom: 0.2,
+                    ),
+                    ShowUp(
+                      child: SizedBox(
+                        width: 300,
+                        height: 40,
+                        child: LiquidLinearProgressIndicator(
+                          value: stats[stat]['num']/stats_total,
+                          backgroundColor: Colors.grey.shade100,
+                          valueColor: AlwaysStoppedAnimation(binColours[stats[stat]['name'].toString().titleCase + " recycling"]),
+                          direction: Axis.horizontal,
+                          center: Text(
+                            stats[stat]['num'].toString(),
+                            style: TextStyle(
+                              fontSize: 16.0,
+                              fontWeight: FontWeight.bold,
+                            )
+                          ),
+                          borderColor: Colors.grey.shade200,
+                          borderWidth: 2.0,
+                        ),
+                      ),
+                      delay: intitialDelay += 250,
+                      bottom: 0.5,
+                    ),
+                  ],
+                ),
+              ShowUp(
+                child: Text(
+                  "Total Scans: " + stats_total.toString(),
+                  style: TextStyle(
+                    fontSize: 14.0,
+                    fontWeight: FontWeight.w400
+                  ),
+                ),
+                delay: 2000,
+                bottom: 0.2,
+              ),
+                
             ],
           ),
         ),
