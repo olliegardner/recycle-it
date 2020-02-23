@@ -1,5 +1,5 @@
 # Recycle It
-A recycling app who's aim is to solve the world's massive waste problem. The app allows users to take pictures of their rubbish and in return they will find out if their rubbish can be recycled and which coloured bin they should put it in.
+A recycling app who's aim is to solve the world's massive waste problem by reducing the amount of recyclable material sent to landfill everyday. The app allows users to take pictures of their rubbish and in return they will find out if their rubbish can be recycled and which coloured bin they should put it in.
 
 ## The Challenge
 The app was built for the Sustainability track at JunctionX's Exeter based Hackathon in 2020. The hackathon was spread over 3 days and lasted for 52 hours.
