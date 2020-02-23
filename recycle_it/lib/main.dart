@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ffi';
 import 'dart:io';
 import 'dart:convert';
 import 'package:device_info/device_info.dart';
@@ -105,6 +104,7 @@ class HomePage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            
             SizedBox(
               width: width,
               child: TextLiquidFill(
@@ -115,12 +115,37 @@ class HomePage extends StatelessWidget {
                   fontSize: 55.0,
                   fontWeight: FontWeight.w300,
                 ),
-                boxHeight: height / 3,
+                boxHeight: height / 6,
                 loadDuration: Duration(milliseconds: 3000),
               ),
             ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                ShowUp(
+                  child: Icon(
+                    Icons.location_on,
+                    color: Colors.white,
+                  ),
+                  delay: 2000,
+                  bottom: 0.5,
+                ),
+                ShowUp(
+                  child: Text(
+                    placemark[0].administrativeArea,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18.0,
+                    ),
+                  ),
+                  delay: 2250,
+                  bottom: 0.5,
+                ),
+              ],
+            ),
+            SizedBox(height: height / 26),
             Padding(
-              padding: EdgeInsets.fromLTRB(width/7, 0, width/7, height/7),
+              padding: EdgeInsets.fromLTRB(width/7, 0, width/7, 0),
               child: ShowUp(
                 child: Text(
                   "Take a picture of your rubbish and we will tell you whether it is recyclable.",
@@ -131,7 +156,7 @@ class HomePage extends StatelessWidget {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                delay: 1250,
+                delay: 2250,
                 bottom: 0.5,
               ),
             ),
