@@ -96,3 +96,9 @@ Temporary Items
 # End of https://www.gitignore.io/api/macos,flutter,visualstudiocode
 
 credentials.dart
+
+AppDelegate.swift
+
+*/AppDelegate.swift
+
+recycle_it/ios/Runner/AppDelegate.swift
