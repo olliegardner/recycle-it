@@ -6,6 +6,7 @@ The app was built for the Sustainability track at JunctionX's Exeter based Hacka
 https://junctionxexeter.com/
 
 ## App Demo
+[App Demo Video](https://www.youtube.com/watch?v=FqotpUMSzmk&feature=youtu.be)
 
 ## Technologies
 The app was developed with:
