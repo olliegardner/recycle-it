@@ -19,6 +19,6 @@ We created a Flutter app who's aim is to solve the world's massive waste problem
 ## Technologies
 The app was developed with:
 * Flutter | https://flutter.dev/
-* Google Vision/Maps API | https://cloud.google.com/vision
+* Google Vision/Maps API | https://cloud.google.com/vision | https://pub.dev/packages/google_maps_flutter
 * MongoDB | https://www.mongodb.com/ | https://pub.dev/packages/mongo_dart
 * Various Flutter plugins | https://github.com/flutter/plugins
